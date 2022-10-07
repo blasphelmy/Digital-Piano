@@ -1,18 +1,19 @@
 #define __WINDOWS_MM__
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "olcPixelGameEngineGL.h"
+#define TSF_IMPLEMENTATION
+#include "tsf.h"
+#include "minisdl_audio.h"
+#include "RtMidi.h"
 #include <iostream>
 #include <windows.h>
 #include <sqltypes.h>
 #include <sql.h>
 #include <sqlext.h>
-#include "RtMidi.h"
 #include <signal.h>
 #include <thread>
 #include <map>
-
-bool done;
-static void finish(int ignore) { done = true; }
+#include <queue>
 
 class key {
 public:
@@ -46,6 +47,35 @@ class MAPPER {
 public:
     std::vector<key> keyMap;
     std::map<int, int> keyIdMap;
+    tsf* soundFile = nullptr;
+    bool pedal = false;
+
+    struct activeNotes {
+        activeNotes(int index, int keyId) {
+            this->index = index;
+            this->keyId = keyId;
+        }
+        int index;
+        int keyId;
+    };
+
+    std::queue<activeNotes> activeNotesPool;
+private :
+    void flushActiveNote() {
+        std::queue<activeNotes> newqueue;
+        while (!activeNotesPool.empty()) {
+            activeNotes note = activeNotesPool.front();
+            activeNotesPool.pop();
+            if (keyMap[keyIdMap[note.keyId]].velocity > 0) {
+                newqueue.push(note);
+            }
+            else {
+                tsf_note_off(soundFile, 0, note.keyId+21);
+            }
+        }
+        activeNotesPool = newqueue;
+    }
+
 public : 
     MAPPER() {
         //set up white keys
@@ -120,8 +150,23 @@ public :
     }
 
 public : 
-    void setKeyState(int keyId, int command) {
-        keyMap[keyIdMap[keyId]].velocity = command;
+    void setKeyState(int cat, int keyId, int command) {
+        if (cat == 144) {
+            if (command != 0) {
+                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(command) / 100.f);
+                activeNotesPool.push(activeNotes(0, keyId));
+            }
+            else if (!pedal) {
+                tsf_note_off(soundFile, 0, keyId + 21);
+            }
+            keyMap[keyIdMap[keyId]].velocity = command;
+        }
+        else {
+            switch (pedal) {
+            case true: pedal = false; flushActiveNote();  break;
+            case false: pedal = true; break;
+            }
+        }
     }
 
 };
@@ -130,8 +175,8 @@ class DigitalPiano : public olc::PixelGameEngine {
 public :
     DigitalPiano() {
         sAppName = "Synthesia";
-        whiteKeySize = olc::vd2d(1920.f / 52.f, 200);
-        blackKeySize = olc::vd2d(1920.f / 54.f, 120);
+        whiteKeySize = olc::vd2d(1920.f / 53.f, 200);
+        blackKeySize = olc::vd2d(1920.f / 65.f, 120);
     }
     ~DigitalPiano() {
     }
@@ -147,7 +192,6 @@ public:
         return true;
     }
     bool OnUserUpdate(float felaspedTime) override {
-        //std::cout << "Elasped time" << felaspedTime << std::endl;
         Clear(olc::Pixel(143, 139, 123));
         drawKeys();
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
@@ -162,7 +206,7 @@ private :
                 return olc::Pixel(255, 255, 255);
             }
             else {
-                return olc::Pixel(220, 220, 220);
+                return olc::Pixel(63, 119, 209);
             }
         }
         else {
@@ -170,7 +214,7 @@ private :
                 return olc::Pixel(50, 50, 50);
             }
             else {
-                return olc::Pixel(120, 120, 120);
+                return olc::Pixel(98, 142, 217);
             }
         }
         return olc::RED;
@@ -199,6 +243,8 @@ int guiRenderThread(MAPPER * keyMapper) {
         app.Start();
     return 0;
 }
+bool done;
+static void finish(int ignore) { done = true; }
 int inputThread(MAPPER * keyMapper) {
     RtMidiIn* midiin = new RtMidiIn();
     std::vector<unsigned char> message;
@@ -211,23 +257,17 @@ int inputThread(MAPPER * keyMapper) {
         goto cleanup;
     }
     midiin->openPort(0);
-    // Don't ignore sysex, timing, or active sensing messages.
     midiin->ignoreTypes(false, false, false);
-    // Install an interrupt handler function.
     done = false;
     (void)signal(SIGINT, finish);
-    // Periodically check input queue.
     std::cout << "Reading MIDI from port ... quit with Ctrl-C.\n";
     while (!done) {
         stamp = midiin->getMessage(&message);
         nBytes = message.size();
         if (nBytes > 1) {
-            keyMapper->setKeyState((int)message[1] - 21, (int)message[2]);
-            //for (i = 0; i < nBytes; i++)
-            //std::cout << "Keyid = " << (int)message[1] - 21 << std::endl;
-            //if (nBytes > 0)
-            //    std::cout << "stamp = " << stamp << std::endl;
-            // Sleep for 10 milliseconds ... platform-dependent.
+            //144 keys 176 pedals
+            keyMapper->setKeyState((int)message[0],(int)message[1] - 21, (int)message[2]);
+            std::cout << (int)message[0] << std::endl;
         }
     }
     // Clean up
@@ -235,14 +275,40 @@ cleanup:
     delete midiin;
     return 0;
 }
-int main()
+
+tsf* soundFile;
+static void AudioCallback(void* data, Uint8* stream, int len)
 {
+    int SampleCount = (len / (2 * sizeof(short))); //2 output channels
+    tsf_render_short(soundFile, (short*)stream, SampleCount, 0);
+}
+int main(int argc, char* argv[])
+{
+    SDL_AudioSpec OutputAudioSpec;
+    OutputAudioSpec.freq = 24000;
+    OutputAudioSpec.format = AUDIO_S16;
+    OutputAudioSpec.channels = 2;
+    OutputAudioSpec.samples = 512;
+    OutputAudioSpec.callback = AudioCallback;
+
+    SDL_AudioInit(NULL);
+    soundFile = tsf_load_filename("px860.sf2");
+
+    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, 0);
+
+    SDL_OpenAudio(&OutputAudioSpec, NULL);
+
+    SDL_PauseAudio(0);
+
+
     MAPPER* keyMapper = new MAPPER();
+    keyMapper -> soundFile = soundFile;
     std::thread guiThreadObject(guiRenderThread, keyMapper);
     std::thread inputThreadObject(inputThread, keyMapper);
     inputThreadObject.join();
     guiThreadObject.join();
 
     delete keyMapper;
+    delete soundFile;
     return 0;
 }

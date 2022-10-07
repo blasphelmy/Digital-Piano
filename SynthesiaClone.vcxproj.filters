@@ -24,12 +24,24 @@
     <ClCompile Include="worker_theads.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="minisdl_audio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RtMidi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="olcPixelGameEngine.h">
+    <ClInclude Include="olcPixelGameEngineGL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tml.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tsf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="minisdl_audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
