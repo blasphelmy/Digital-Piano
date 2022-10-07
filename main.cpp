@@ -47,8 +47,11 @@ class MAPPER {
 public:
     std::vector<key> keyMap;
     std::map<int, int> keyIdMap;
+    std::map<int, key * > activelyDrawing;
+    std::queue<key> onScreenNoteElements;
     tsf* soundFile = nullptr;
     bool pedal = false;
+
 
     struct activeNotes {
         activeNotes(int index, int keyId) {
@@ -155,10 +158,21 @@ public :
             if (command != 0) {
                 tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(command) / 100.f);
                 activeNotesPool.push(activeNotes(0, keyId));
+                key thisKey = keyMap[keyIdMap[keyId]];
+                key * newKey = new key(thisKey.isWhite);
+                newKey->name = thisKey.name;
+                newKey->position = thisKey.position;
+                newKey->position.y = (880 - 110);
+                activelyDrawing.emplace(std::make_pair(keyIdMap[keyId], newKey));
             }
-            else if (!pedal) {
-                tsf_note_off(soundFile, 0, keyId + 21);
+            else {
+                if(activelyDrawing.count(keyIdMap[keyId]) > 0)
+                    onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap[keyId])->second));
+                delete activelyDrawing.find(keyIdMap[keyId])->second;
+                activelyDrawing.erase(keyIdMap[keyId]);
+                if (!pedal) tsf_note_off(soundFile, 0, keyId + 21);
             }
+            activelyDrawing;
             keyMap[keyIdMap[keyId]].velocity = command;
         }
         else {
@@ -174,7 +188,7 @@ public :
 class DigitalPiano : public olc::PixelGameEngine {
 public :
     DigitalPiano() {
-        sAppName = "Synthesia";
+        sAppName = "Digital Piano";
         whiteKeySize = olc::vd2d(1920.f / 53.f, 200);
         blackKeySize = olc::vd2d(1920.f / 65.f, 120);
     }
@@ -182,7 +196,6 @@ public :
     }
 public:
     MAPPER* keyMapper = nullptr;
-
 private: 
     olc::vd2d whiteKeySize;
     olc::vd2d blackKeySize;
@@ -193,6 +206,7 @@ public:
     }
     bool OnUserUpdate(float felaspedTime) override {
         Clear(olc::Pixel(143, 139, 123));
+        DrawOnScreenNotes(felaspedTime);
         drawKeys();
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
@@ -219,12 +233,38 @@ private :
         }
         return olc::RED;
     }
+    void DrawOnScreenNotes(float felaspedTime) {
+        
+    }
     void drawKeys() {
-        for (int i = 0; i < (*keyMapper).keyMap.size(); i++) {
+        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
+            if ((*keyMapper).activelyDrawing.count(i) > 0) {
+                key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
+                olc::vd2d size;
+                if (drawnKey->isWhite) size = whiteKeySize;
+                else size = blackKeySize;
+                size.y = blackKeySize.y;
+                FillRect(drawnKey->position, size - olc::vd2d(1, 1), olc::Pixel(72, 124, 207));
+            }
+
             key thisKey = (*keyMapper).keyMap[i];
             if (thisKey.isWhite) FillRect(thisKey.position, whiteKeySize - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
             else FillRect(thisKey.position, blackKeySize - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
         }
+        std::queue<key> newOnScreenElementsQueue;
+        while (!keyMapper->onScreenNoteElements.empty()) {
+            key onscreenKey = keyMapper->onScreenNoteElements.front();
+            keyMapper->onScreenNoteElements.pop();
+
+            olc::vd2d size;
+            if (onscreenKey.isWhite) size = whiteKeySize;
+            else size = blackKeySize;
+            size.y = blackKeySize.y;
+            FillRect(onscreenKey.position, size - olc::vd2d(1, 1), olc::Pixel(72, 124, 207));
+
+            newOnScreenElementsQueue.push(onscreenKey);
+        }
+        keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
     }
 };
 
@@ -267,7 +307,6 @@ int inputThread(MAPPER * keyMapper) {
         if (nBytes > 1) {
             //144 keys 176 pedals
             keyMapper->setKeyState((int)message[0],(int)message[1] - 21, (int)message[2]);
-            std::cout << (int)message[0] << std::endl;
         }
     }
     // Clean up
@@ -286,7 +325,7 @@ int main(int argc, char* argv[])
 {
     SDL_AudioSpec OutputAudioSpec;
     OutputAudioSpec.freq = 24000;
-    OutputAudioSpec.format = AUDIO_S16;
+    OutputAudioSpec.format = AUDIO_S16MSB;
     OutputAudioSpec.channels = 2;
     OutputAudioSpec.samples = 512;
     OutputAudioSpec.callback = AudioCallback;
