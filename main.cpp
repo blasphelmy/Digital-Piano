@@ -18,6 +18,7 @@
 class key {
 public:
     olc::vd2d position;
+    olc::vd2d size;
     std::string name;
     bool isWhite;
     //bool active = false;
@@ -29,6 +30,14 @@ public :
         this->isWhite = isWhite;
     };
     key(
+        bool isWhite,
+        olc::vd2d size
+        )
+    {
+        this->size = size;
+        this->isWhite = isWhite;
+    };
+    key(
         std::string name,
         bool isWhite,
         olc::vd2d position
@@ -36,6 +45,17 @@ public :
         this->isWhite = isWhite;
         this->position = position;
         this->name = name;
+    }
+    key(
+        std::string name,
+        bool isWhite,
+        olc::vd2d position,
+        olc::vd2d size
+    ) {
+        this->isWhite = isWhite;
+        this->position = position;
+        this->name = name;
+        this->size = size;
     }
     ~key() {
 
@@ -105,25 +125,27 @@ public :
             {81, 85},{83, 86},{85, 87},
 
         };
+        olc::vd2d whiteKeySize(1920.f / 53.f, 200);
+        olc::vd2d blackKeySize (1920.f / 65.f, 120);
         while (i < 52) {
-            key newKey(std::string(1, abc.at(i % 7)), true, initialPos);
+            key newKey(std::string(1, abc.at(i % 7)), true, initialPos, whiteKeySize);
             i++;
             initialPos = initialPos + offSet;
             keyMap.push_back(newKey);
         }
         i = 0;
         //create first a# key
-        key newKey(false);
+        key newKey(false, blackKeySize);
         newKey.position = olc::vd2d(slice * .5, 880);
         keyMap.push_back(newKey);
         //create the subsequent groups of 5 black keys
         initialPos = olc::vd2d(slice * 2.5, 880);
         for (int y = 0; y < 35; y = y + 5) {
-            key k1(false);
-            key k2(false);
-            key k3(false);
-            key k4(false);
-            key k5(false);
+            key k1(false, blackKeySize);
+            key k2(false, blackKeySize);
+            key k3(false, blackKeySize);
+            key k4(false, blackKeySize);
+            key k5(false, blackKeySize);
 
             k1.position = initialPos;
             
@@ -207,7 +229,7 @@ public:
     bool OnUserUpdate(float felaspedTime) override {
         Clear(olc::Pixel(143, 139, 123));
         DrawOnScreenNotes(felaspedTime);
-        drawKeys();
+        drawKeys(felaspedTime);
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
@@ -236,7 +258,8 @@ private :
     void DrawOnScreenNotes(float felaspedTime) {
         
     }
-    void drawKeys() {
+    void drawKeys(double timeElasped) {
+        double yOffSet = timeElasped * 300.f;
         for (int i = 0; i < keyMapper->keyMap.size(); i++) {
             if ((*keyMapper).activelyDrawing.count(i) > 0) {
                 key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
@@ -249,7 +272,7 @@ private :
 
             key thisKey = (*keyMapper).keyMap[i];
             if (thisKey.isWhite) FillRect(thisKey.position, whiteKeySize - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
-            else FillRect(thisKey.position, blackKeySize - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
+            else FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
         }
         std::queue<key> newOnScreenElementsQueue;
         while (!keyMapper->onScreenNoteElements.empty()) {
@@ -262,7 +285,9 @@ private :
             size.y = blackKeySize.y;
             FillRect(onscreenKey.position, size - olc::vd2d(1, 1), olc::Pixel(72, 124, 207));
 
-            newOnScreenElementsQueue.push(onscreenKey);
+            onscreenKey.position.y -= yOffSet;
+
+            if(onscreenKey.position.y > 0) newOnScreenElementsQueue.push(onscreenKey);
         }
         keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
     }
