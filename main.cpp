@@ -17,10 +17,10 @@
 
 class key {
 public:
-    olc::vd2d position;
-    olc::vd2d size;
+    olc::vd2d   position;
+    olc::vd2d   size;
     std::string name;
-    bool isWhite;
+    bool        isWhite;
     //bool active = false;
     int velocity = 0;
 public :
@@ -34,28 +34,28 @@ public :
         olc::vd2d size
         )
     {
-        this->size = size;
+        this->size =    size;
         this->isWhite = isWhite;
     };
     key(
         std::string name,
-        bool isWhite,
-        olc::vd2d position
+        bool        isWhite,
+        olc::vd2d   position
     ) {
-        this->isWhite = isWhite;
+        this->isWhite =  isWhite;
         this->position = position;
-        this->name = name;
+        this->name =     name;
     }
     key(
         std::string name,
-        bool isWhite,
-        olc::vd2d position,
-        olc::vd2d size
+        bool        isWhite,
+        olc::vd2d   position,
+        olc::vd2d   size
     ) {
-        this->isWhite = isWhite;
+        this->isWhite =  isWhite;
         this->position = position;
-        this->name = name;
-        this->size = size;
+        this->name =     name;
+        this->size =     size;
     }
     ~key() {
 
@@ -65,13 +65,12 @@ public :
 
 class MAPPER {
 public:
-    std::vector<key> keyMap;
-    std::map<int, int> keyIdMap;
-    std::map<int, key * > activelyDrawing;
-    std::queue<key> onScreenNoteElements;
-    tsf* soundFile = nullptr;
-    bool pedal = false;
-
+    std::vector<key>        keyMap;
+    std::map<int, int>      keyIdMap;
+    std::map<int, key * >   activelyDrawing;
+    std::queue<key>         onScreenNoteElements;
+    tsf* soundFile          = nullptr;
+    bool pedal              = false;
 
     struct activeNotes {
         activeNotes(int index, int keyId) {
@@ -87,8 +86,10 @@ private :
     void flushActiveNote() {
         std::queue<activeNotes> newqueue;
         while (!activeNotesPool.empty()) {
-            activeNotes note = activeNotesPool.front();
-            activeNotesPool.pop();
+
+            activeNotes note =  activeNotesPool.front();
+            activeNotesPool .pop();
+            
             if (keyMap[keyIdMap[note.keyId]].velocity > 0) {
                 newqueue.push(note);
             }
@@ -104,34 +105,47 @@ public :
         //set up white keys
         //index 0-51 : white keys
         //index 52-87 : black keys
-        double slice = 1920.f / 52.f;
-        std::string abc = "ABCDEFG";
-        olc::vd2d initialPos(0, 880);
-        olc::vd2d offSet(slice, 0);
-        int i = 0;
-        keyIdMap =
-        {
-            //white keys
-            {0, 0},{2, 1},{3, 2},{5, 3},{7, 4},{8, 5},{10, 6},{12, 7},{14, 8},{15, 9},{17, 10},{19, 11},
-            {20, 12},{22, 13},{24, 14},{26, 15},{27, 16},{29, 17},{31, 18},{32, 19},{34, 20},{36, 21},
-            {38, 22},{39, 23},{41, 24},{43, 25},{44, 26},{46, 27},{48, 28},{50, 29},{51, 30},{53, 31},
-            {55, 32},{56, 33},{58, 34},{60, 35},{62, 36},{63, 37},{65, 38},{67, 39},{68, 40},{70, 41},
-            {72, 42},{74, 43},{75, 44},{77, 45},{79, 46},{80, 47},{82, 48},{84, 49},{86, 50},{87, 51},
-            
-            //black keys
-            {1, 52},{4, 53},{6, 54},{9, 55},{11, 56},{13, 57},{16, 58},{18, 59},{21, 60},{23, 61},{25, 62},
-            {28, 63},{30, 64},{33, 65},{35, 66},{37, 67},{40, 68},{42, 69},{45, 70},{47, 71},{49, 72},{52, 73},
-            {54, 74},{57, 75},{59, 76},{61, 77},{64, 78},{66, 79},{69, 80},{71, 81},{73, 82},{76, 83},{78, 84},
-            {81, 85},{83, 86},{85, 87},
+        olc::vd2d       whiteKeySize(1920.f / 53.f, 200);
+        olc::vd2d       blackKeySize(1920.f / 65.f, 120);
+        double          slice = 1920.f / 52.f;
+        std::string     abc = "ABCDEFG";
+        olc::vd2d       initialPos(0, 880);
+        olc::vd2d       offSet(slice, 0);
+        int             i = 0;
+        keyIdMap =  {
+                        //white keys
+                        {0, 0},{2, 1},{3, 2},{5, 3},{7, 4},
+                        {8, 5},{10, 6},{12, 7},{14, 8},{15, 9},
+                        {17, 10},{19, 11},{20, 12},{22, 13},
+                        {24, 14},{26, 15},{27, 16},{29, 17},
+                        {31, 18},{32, 19},{34, 20},{36, 21},
+                        {38, 22},{39, 23},{41, 24},{43, 25},
+                        {44, 26},{46, 27},{48, 28},{50, 29},
+                        {51, 30},{53, 31},{55, 32},{56, 33},
+                        {58, 34},{60, 35},{62, 36},{63, 37},
+                        {65, 38},{67, 39},{68, 40},{70, 41},
+                        {72, 42},{74, 43},{75, 44},{77, 45},
+                        {79, 46},{80, 47},{82, 48},{84, 49},
+                        {86, 50},{87, 51},
 
-        };
-        olc::vd2d whiteKeySize(1920.f / 53.f, 200);
-        olc::vd2d blackKeySize (1920.f / 65.f, 120);
+                        //black keys
+                        {1, 52},{4, 53},{6, 54},{9, 55},{11, 56},
+                        {13, 57},{16, 58},{18, 59},{21, 60},
+                        {23, 61},{25, 62},{28, 63},{30, 64},
+                        {33, 65},{35, 66},{37, 67},{40, 68},
+                        {42, 69},{45, 70},{47, 71},{49, 72},
+                        {52, 73},{54, 74},{57, 75},{59, 76},
+                        {61, 77},{64, 78},{66, 79},{69, 80},
+                        {71, 81},{73, 82},{76, 83},{78, 84},
+                        {81, 85},{83, 86},{85, 87},
+
+                    };
+
         while (i < 52) {
             key newKey(std::string(1, abc.at(i % 7)), true, initialPos, whiteKeySize);
             i++;
-            initialPos = initialPos + offSet;
-            keyMap.push_back(newKey);
+            initialPos   = initialPos + offSet;
+            keyMap       .push_back(newKey);
         }
         i = 0;
         //create first a# key
@@ -147,20 +161,20 @@ public :
             key k4(false, blackKeySize);
             key k5(false, blackKeySize);
 
-            k1.position = initialPos;
+            k1.position =   initialPos;
             
-            initialPos.x = initialPos.x + slice;
-            k2.position = initialPos;
+            initialPos.x =  initialPos.x + slice;
+            k2.position =   initialPos;
 
-            initialPos.x = initialPos.x + (2 * slice);
-            k3.position = initialPos;
+            initialPos.x =  initialPos.x + (2 * slice);
+            k3.position =   initialPos;
 
-            initialPos.x = initialPos.x + slice;
-            k4.position = initialPos;
+            initialPos.x =  initialPos.x + slice;
+            k4.position =   initialPos;
 
-            initialPos.x = initialPos.x + slice;
-            k5.position = initialPos;
-            initialPos.x = initialPos.x + (2 * slice);
+            initialPos.x =  initialPos.x + slice;
+            k5.position =   initialPos;
+            initialPos.x =  initialPos.x + (2 * slice);
 
             keyMap.push_back(k1);
             keyMap.push_back(k2);
@@ -184,23 +198,30 @@ public :
                 key * newKey = new key(thisKey.isWhite);
                 newKey->name = thisKey.name;
                 newKey->position = thisKey.position;
-                newKey->position.y = (880 - 110);
+                newKey->position.y = 880;
+                newKey->size = thisKey.size;
+                newKey->size.y = 10;
                 activelyDrawing.emplace(std::make_pair(keyIdMap[keyId], newKey));
             }
             else {
-                if(activelyDrawing.count(keyIdMap[keyId]) > 0)
+                if(activelyDrawing.count(keyIdMap[keyId]) > 0) 
                     onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap[keyId])->second));
                 delete activelyDrawing.find(keyIdMap[keyId])->second;
                 activelyDrawing.erase(keyIdMap[keyId]);
-                if (!pedal) tsf_note_off(soundFile, 0, keyId + 21);
+                if (!pedal) 
+                    tsf_note_off(soundFile, 0, keyId + 21);
             }
-            activelyDrawing;
             keyMap[keyIdMap[keyId]].velocity = command;
         }
         else {
             switch (pedal) {
-            case true: pedal = false; flushActiveNote();  break;
-            case false: pedal = true; break;
+                case true:  
+                    pedal = false;
+                    flushActiveNote();
+                    break;
+                case false: 
+                    pedal = true; 
+                    break;
             }
         }
     }
@@ -211,17 +232,20 @@ class DigitalPiano : public olc::PixelGameEngine {
 public :
     DigitalPiano() {
         sAppName = "Digital Piano";
-        whiteKeySize = olc::vd2d(1920.f / 53.f, 200);
-        blackKeySize = olc::vd2d(1920.f / 65.f, 120);
     }
     ~DigitalPiano() {
     }
 public:
     MAPPER* keyMapper = nullptr;
 private: 
-    olc::vd2d whiteKeySize;
-    olc::vd2d blackKeySize;
-
+    struct horizontalLine {
+        float y = 880;
+        float left = 0.f;
+        float right = 1920.f;
+    };
+    std::queue<horizontalLine> scrollingLines;
+    float targetBPM = .5f;
+    float timeAccumalator = 500.f;
 public:
     bool OnUserCreate() override {
         return true;
@@ -259,46 +283,51 @@ private :
         
     }
     void drawKeys(double timeElasped) {
-        double yOffSet = timeElasped * 300.f;
-        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-            if ((*keyMapper).activelyDrawing.count(i) > 0) {
-                key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                olc::vd2d size;
-                if (drawnKey->isWhite) size = whiteKeySize;
-                else size = blackKeySize;
-                size.y = blackKeySize.y;
-                FillRect(drawnKey->position, size - olc::vd2d(1, 1), olc::Pixel(72, 124, 207));
-            }
-
-            key thisKey = (*keyMapper).keyMap[i];
-            if (thisKey.isWhite) FillRect(thisKey.position, whiteKeySize - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
-            else FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
-        }
+        
+        double yOffSet = timeElasped * 600.f;
         std::queue<key> newOnScreenElementsQueue;
+        std::queue<horizontalLine> newHorizontalLinesQueue;
+        timeAccumalator += timeElasped;
+        if (timeAccumalator > targetBPM) {
+            timeAccumalator = 0.f;
+            scrollingLines.push(horizontalLine());
+        }
+
+        while (!scrollingLines.empty()) {
+            horizontalLine line = scrollingLines.front();
+            scrollingLines.pop();
+            DrawLine(olc::vd2d(line.left, line.y), olc::vd2d(line.right, line.y), olc::BLACK);
+            line.y -= yOffSet;
+            if(line.y > 0) newHorizontalLinesQueue.push(line);
+        }
+        scrollingLines = newHorizontalLinesQueue;
         while (!keyMapper->onScreenNoteElements.empty()) {
+
             key onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
-
-            olc::vd2d size;
-            if (onscreenKey.isWhite) size = whiteKeySize;
-            else size = blackKeySize;
-            size.y = blackKeySize.y;
-            FillRect(onscreenKey.position, size - olc::vd2d(1, 1), olc::Pixel(72, 124, 207));
-
+            FillRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), olc::Pixel(72, 124, 207));
             onscreenKey.position.y -= yOffSet;
 
-            if(onscreenKey.position.y > 0) newOnScreenElementsQueue.push(onscreenKey);
+            if (onscreenKey.position.y + onscreenKey.size.y > 0) 
+                newOnScreenElementsQueue.push(onscreenKey);
         }
         keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
+        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
+            
+            if (keyMapper->activelyDrawing.count(i) > 0) {
+                key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
+                FillRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), olc::Pixel(72, 124, 207));
+                drawnKey->size.y += yOffSet;
+                drawnKey->position.y -= yOffSet;
+            }
+            key thisKey = keyMapper->keyMap[i];
+            
+            if (thisKey.isWhite)
+                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
+            else
+                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
+        }
     }
-};
-
-std::string hex(uint32_t n, uint8_t d)
-{
-    std::string s(d, '0');
-    for (int i = d - 1; i >= 0; i--, n >>= 4)
-        s[i] = "0123456789ABCDEF"[n & 0xF];
-    return s;
 };
 
 int guiRenderThread(MAPPER * keyMapper) {
@@ -317,6 +346,8 @@ int inputThread(MAPPER * keyMapper) {
     double stamp;
     // Check available ports.
     unsigned int nPorts = midiin->getPortCount();
+
+
     if (nPorts == 0) {
         std::cout << "No ports available!\n";
         goto cleanup;
@@ -349,24 +380,24 @@ static void AudioCallback(void* data, Uint8* stream, int len)
 int main(int argc, char* argv[])
 {
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq = 24000;
-    OutputAudioSpec.format = AUDIO_S16MSB;
-    OutputAudioSpec.channels = 2;
-    OutputAudioSpec.samples = 512;
-    OutputAudioSpec.callback = AudioCallback;
+    OutputAudioSpec.freq =      24000;
+    OutputAudioSpec.format =    AUDIO_S16MSB;
+    OutputAudioSpec.channels =  2;
+    OutputAudioSpec.samples =   512;
+    OutputAudioSpec.callback =  AudioCallback;
 
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("px860.sf2");
 
-    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, 0);
+    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, 10);
 
     SDL_OpenAudio(&OutputAudioSpec, NULL);
 
     SDL_PauseAudio(0);
 
 
-    MAPPER* keyMapper = new MAPPER();
-    keyMapper -> soundFile = soundFile;
+    MAPPER* keyMapper =         new MAPPER();
+    keyMapper -> soundFile =    soundFile;
     std::thread guiThreadObject(guiRenderThread, keyMapper);
     std::thread inputThreadObject(inputThread, keyMapper);
     inputThreadObject.join();
