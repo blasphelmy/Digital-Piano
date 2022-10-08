@@ -15,6 +15,9 @@
 #include <map>
 #include <queue>
 
+bool done;
+static void finish(int ignore) { done = true; }
+
 class key {
 public:
     olc::vd2d   position;
@@ -83,12 +86,12 @@ public:
 
     std::queue<activeNotes> activeNotesPool;
 private :
-    void flushActiveNote() {
+    void flushActiveNotes() {
         std::queue<activeNotes> newqueue;
         while (!activeNotesPool.empty()) {
 
-            activeNotes note =  activeNotesPool.front();
-            activeNotesPool .pop();
+            activeNotes note = activeNotesPool.front();
+            activeNotesPool.pop();
             
             if (keyMap[keyIdMap[note.keyId]].velocity > 0) {
                 newqueue.push(note);
@@ -137,15 +140,15 @@ public :
                         {52, 73},{54, 74},{57, 75},{59, 76},
                         {61, 77},{64, 78},{66, 79},{69, 80},
                         {71, 81},{73, 82},{76, 83},{78, 84},
-                        {81, 85},{83, 86},{85, 87},
+                        {81, 85},{83, 86},{85, 87}
 
                     };
 
         while (i < 52) {
             key newKey(std::string(1, abc.at(i % 7)), true, initialPos, whiteKeySize);
             i++;
-            initialPos   = initialPos + offSet;
-            keyMap       .push_back(newKey);
+            initialPos = initialPos + offSet;
+            keyMap.push_back(newKey);
         }
         i = 0;
         //create first a# key
@@ -217,7 +220,7 @@ public :
             switch (pedal) {
                 case true:  
                     pedal = false;
-                    flushActiveNote();
+                    flushActiveNotes();
                     break;
                 case false: 
                     pedal = true; 
@@ -234,6 +237,7 @@ public :
         sAppName = "Digital Piano";
     }
     ~DigitalPiano() {
+        done = true;
     }
 public:
     MAPPER* keyMapper = nullptr;
@@ -244,7 +248,7 @@ private:
         float right = 1920.f;
     };
     std::queue<horizontalLine> scrollingLines;
-    float targetBPM = .5f;
+    float targetBPM = 1.5f;
     float timeAccumalator = 500.f;
 public:
     bool OnUserCreate() override {
@@ -252,8 +256,7 @@ public:
     }
     bool OnUserUpdate(float felaspedTime) override {
         Clear(olc::Pixel(143, 139, 123));
-        DrawOnScreenNotes(felaspedTime);
-        drawKeys(felaspedTime);
+        drawFrame(felaspedTime);
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
@@ -279,12 +282,9 @@ private :
         }
         return olc::RED;
     }
-    void DrawOnScreenNotes(float felaspedTime) {
+    void drawFrame(double timeElasped) {
         
-    }
-    void drawKeys(double timeElasped) {
-        
-        double yOffSet = timeElasped * 600.f;
+        double yOffSet = timeElasped * 100.f;
         std::queue<key> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
         timeAccumalator += timeElasped;
@@ -337,8 +337,7 @@ int guiRenderThread(MAPPER * keyMapper) {
         app.Start();
     return 0;
 }
-bool done;
-static void finish(int ignore) { done = true; }
+
 int inputThread(MAPPER * keyMapper) {
     RtMidiIn* midiin = new RtMidiIn();
     std::vector<unsigned char> message;
@@ -346,7 +345,6 @@ int inputThread(MAPPER * keyMapper) {
     double stamp;
     // Check available ports.
     unsigned int nPorts = midiin->getPortCount();
-
 
     if (nPorts == 0) {
         std::cout << "No ports available!\n";
@@ -357,6 +355,7 @@ int inputThread(MAPPER * keyMapper) {
     done = false;
     (void)signal(SIGINT, finish);
     std::cout << "Reading MIDI from port ... quit with Ctrl-C.\n";
+
     while (!done) {
         stamp = midiin->getMessage(&message);
         nBytes = message.size();
@@ -380,16 +379,16 @@ static void AudioCallback(void* data, Uint8* stream, int len)
 int main(int argc, char* argv[])
 {
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq =      24000;
-    OutputAudioSpec.format =    AUDIO_S16MSB;
+    OutputAudioSpec.freq =      32000;
+    OutputAudioSpec.format = AUDIO_S16;
     OutputAudioSpec.channels =  2;
-    OutputAudioSpec.samples =   512;
+    OutputAudioSpec.samples =   1024;
     OutputAudioSpec.callback =  AudioCallback;
 
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("px860.sf2");
 
-    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, 10);
+    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, 0);
 
     SDL_OpenAudio(&OutputAudioSpec, NULL);
 

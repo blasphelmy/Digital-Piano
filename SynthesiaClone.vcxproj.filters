@@ -21,9 +21,6 @@
     <ClCompile Include="RtMidi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="worker_theads.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="minisdl_audio.c">
       <Filter>Source Files</Filter>
     </ClCompile>

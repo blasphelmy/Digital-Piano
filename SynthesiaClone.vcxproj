@@ -135,7 +135,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="minisdl_audio.c" />
     <ClCompile Include="RtMidi.cpp" />
-    <ClCompile Include="worker_theads.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="minisdl_audio.h" />
