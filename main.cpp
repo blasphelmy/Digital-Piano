@@ -27,6 +27,9 @@ public:
     //bool active = false;
     int velocity = 0;
 public :
+    key() {
+
+    }
     key(
         bool isWhite
     ) {
@@ -68,7 +71,7 @@ public :
 
 class MAPPER {
 public:
-    std::vector<key>        keyMap;
+    std::array<key, 88>        keyMap;
     std::map<int, int>      keyIdMap;
     std::map<int, key * >   activelyDrawing;
     std::queue<key>         onScreenNoteElements;
@@ -146,18 +149,18 @@ public :
 
         while (i < 52) {
             key newKey(std::string(1, abc.at(i % 7)), true, initialPos, whiteKeySize);
-            i++;
             initialPos = initialPos + offSet;
-            keyMap.push_back(newKey);
+            keyMap[i] = newKey;
+            i++;
         }
-        i = 0;
+        i = 52;
         //create first a# key
         key newKey(false, blackKeySize);
         newKey.position = olc::vd2d(slice * .5, 880);
-        keyMap.push_back(newKey);
+        keyMap[i] = newKey;
         //create the subsequent groups of 5 black keys
         initialPos = olc::vd2d(slice * 2.5, 880);
-        for (int y = 0; y < 35; y = y + 5) {
+        for (int y = 53; y < 88; y = y + 5) {
             key k1(false, blackKeySize);
             key k2(false, blackKeySize);
             key k3(false, blackKeySize);
@@ -179,11 +182,11 @@ public :
             k5.position =   initialPos;
             initialPos.x =  initialPos.x + (2 * slice);
 
-            keyMap.push_back(k1);
-            keyMap.push_back(k2);
-            keyMap.push_back(k3);
-            keyMap.push_back(k4);
-            keyMap.push_back(k5);
+            keyMap[y] = k1;
+            keyMap[y + 1] = k2;
+            keyMap[y + 2] = k3;
+            keyMap[y + 3] = k4;
+            keyMap[y + 4] = k5;
 
         }
     }
