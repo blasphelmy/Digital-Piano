@@ -120,8 +120,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;__WINDOWS_MM__;TSF_IMPLEMENTATION;OLC_PGE_APPLICATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;__WINDOWS_MM__;TSF_IMPLEMENTATION;OLC_PGE_APPLICATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <Optimization>MaxSpeed</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,19 +132,33 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="minisdl_audio.c" />
     <ClCompile Include="RtMidi.cpp" />
+    <ClCompile Include="src\Binasc.cpp" />
+    <ClCompile Include="src\MidiEvent.cpp" />
+    <ClCompile Include="src\MidiEventList.cpp" />
+    <ClCompile Include="src\MidiFile.cpp" />
+    <ClCompile Include="src\MidiMessage.cpp" />
+    <ClCompile Include="src\Options.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\MidiFile.h" />
+    <ClInclude Include="include\Options.h" />
     <ClInclude Include="minisdl_audio.h" />
     <ClInclude Include="olcPixelGameEngineGL.h" />
     <ClInclude Include="RtMidi.h" />
     <ClInclude Include="tml.h" />
     <ClInclude Include="tsf.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="arab2.mid" />
+    <None Include="test.mid" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

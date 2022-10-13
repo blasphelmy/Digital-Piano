@@ -24,6 +24,24 @@
     <ClCompile Include="minisdl_audio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Binasc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MidiEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MidiEventList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MidiFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MidiMessage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Options.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RtMidi.h">
@@ -41,5 +59,17 @@
     <ClInclude Include="minisdl_audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\MidiFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="arab2.mid">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="test.mid" />
   </ItemGroup>
 </Project>
