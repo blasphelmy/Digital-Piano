@@ -220,9 +220,9 @@ public :
                 FlyingNotes * newFlyingNote = new FlyingNotes(thisKey.isWhite);
                 newFlyingNote->name = thisKey.name;
                 newFlyingNote->position = thisKey.position;
-                newFlyingNote->position.y = 890;
+                newFlyingNote->position.y = 889;
                 newFlyingNote->size = thisKey.size;
-                newFlyingNote->size.y = -5;
+                newFlyingNote->size.y = -1;
                 activelyDrawing.emplace(std::make_pair(keyIdMap[keyId], newFlyingNote));
             }
             else {
@@ -412,7 +412,7 @@ smf::MidiFile getMidiFileRoutine(std::string& fileName) {
 }
 
 void playMidi(MAPPER* keyMapper) {
-    std::string fileName = "clairedelune.mid";
+    std::string fileName = "SOSPIRO.mid";
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
     int index = 0;
@@ -435,7 +435,7 @@ int main(int argc, char* argv[])
     OutputAudioSpec.freq =      32000;
     OutputAudioSpec.format =    AUDIO_S16;
     OutputAudioSpec.channels =  2;
-    OutputAudioSpec.samples =   2048;
+    OutputAudioSpec.samples =   1024;
     OutputAudioSpec.callback =  AudioCallback;
     int dcbGain = 5;
 
