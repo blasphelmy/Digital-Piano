@@ -414,13 +414,8 @@ smf::MidiFile getMidiFileRoutine(std::string& fileName) {
 void playMidi(MAPPER* keyMapper) {
     std::string fileName = "clairedelune.mid";
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
-    double beat = 1000.f;
-    double tickTiming = beat / midifile.getTicksPerQuarterNote();
-    double timeAccumaltor = 0.f;
-    int ticks = 0;
     smf::MidiEvent event;
     int index = 0;
-
     //double seconds_since_start = difftime(time(0), start);
     auto start = std::chrono::high_resolution_clock::now();
     while (index < midifile[0].size()) {
@@ -438,23 +433,24 @@ int main(int argc, char* argv[])
 {
     SDL_AudioSpec OutputAudioSpec;
     OutputAudioSpec.freq =      32000;
-    OutputAudioSpec.format = AUDIO_S16;
+    OutputAudioSpec.format =    AUDIO_S16;
     OutputAudioSpec.channels =  2;
-    OutputAudioSpec.samples =   1024;
+    OutputAudioSpec.samples =   2048;
     OutputAudioSpec.callback =  AudioCallback;
+    int dcbGain = 5;
 
     SDL_AudioInit(NULL);
-    soundFile = tsf_load_filename("px860.sf2");
+    soundFile = tsf_load_filename("soundfile_1.sf2");
 
-    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, 0);
+    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
 
     SDL_OpenAudio(&OutputAudioSpec, NULL);
 
     SDL_PauseAudio(0);
 
 
-    MAPPER* keyMapper =         new MAPPER();
-    keyMapper -> soundFile =    soundFile;
+    MAPPER* keyMapper = new MAPPER();
+    keyMapper -> soundFile = soundFile;
     std::thread guiThreadObject(guiRenderThread, keyMapper);
     std::thread inputThreadObject(inputThread, keyMapper);
     
