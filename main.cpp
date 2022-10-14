@@ -24,6 +24,27 @@ bool done;
 tsf* soundFile;
 static void finish(int ignore) { done = true; }
 
+struct vector3f {
+    float x;
+    float y;
+    float z;
+    vector3f(float x, float y, float z) {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    }
+    vector3f() {
+        this->x = 0;
+        this->y = 0;
+        this->z = 0;
+    }
+    void setAll(float xyz) {
+        this->x = xyz;
+        this->y = xyz;
+        this->z = xyz;
+    }
+};
+
 struct vector3i {
     int x;
     int y;
@@ -50,6 +71,13 @@ struct vector3i {
         result.x = x - obj.x;
         result.y = y - obj.y;
         result.z = z - obj.z;
+        return result;
+    }
+    vector3i operator * (vector3f const& obj) {
+        vector3i result;
+        result.x = x * obj.x;
+        result.y = y * obj.y;
+        result.z = z * obj.z;
         return result;
     }
     vector3i operator * (vector3i const& obj) {
@@ -220,21 +248,22 @@ public :
         i = 52;
         //create first a# key
         key newKey(false, blackKeySize);
+        newKey.name = std::string("A");
         newKey.position = olc::vd2d(slice * .5, 880);
         keyMap[i] = newKey;
         //create the subsequent groups of 5 black keys
         initialPos = olc::vd2d(slice * 2.5, 880);
         for (int y = 53; y < 88; y = y + 5) {
             key k1(false, blackKeySize);
-            k1.name = std::string("A");
+            k1.name = std::string("C");
             key k2(false, blackKeySize);
-            k2.name = std::string("C");
+            k2.name = std::string("D");
             key k3(false, blackKeySize);
-            k3.name = std::string("D");
+            k3.name = std::string("F");
             key k4(false, blackKeySize);
-            k4.name = std::string("F");
+            k4.name = std::string("G");
             key k5(false, blackKeySize);
-            k5.name = std::string("G");
+            k5.name = std::string("A");
 
             k1.position =   initialPos;
             
@@ -327,13 +356,13 @@ private:
     float timeAccumalator = 500.f;
 public:
     bool OnUserCreate() override {
-        colorMap["A"] = vector3i(155, 95, 224);
-        colorMap["B"] = vector3i(22, 164, 216);
-        colorMap["C"] = vector3i(96, 219, 232);
-        colorMap["D"] = vector3i(139, 211, 70);
-        colorMap["E"] = vector3i(239, 223, 72);
-        colorMap["F"] = vector3i(249, 165, 44);
-        colorMap["G"] = vector3i(214, 78, 18);
+        colorMap["C"] = vector3i(254, 0, 0);
+        colorMap["D"] = vector3i(45, 122, 142);
+        colorMap["E"] = vector3i(251, 133, 39);
+        colorMap["F"] = vector3i(146, 209, 79);
+        colorMap["G"] = vector3i(255, 255, 113);
+        colorMap["A"] = vector3i(107, 60, 200);
+        colorMap["B"] = vector3i(146, 209, 79);
         return true;
     }
     bool OnUserUpdate(float felaspedTime) override {
@@ -364,12 +393,12 @@ private :
         return olc::RED;
     }
     olc::Pixel getDrawingColor(bool isWhite, std::string note) {
-        vector3i darkMask;
+        vector3f darkMask(1.f, 1.f, 1.f);
         if (!isWhite) {
-            darkMask = darkMask + vector3i(50, 50, 50);
+            darkMask.setAll(.7);
         }
         vector3i color = colorMap[note];
-        color = color - darkMask;
+        color = color * darkMask;
         return olc::Pixel(color.x, color.y, color.z);
     }
     void drawFrame(double timeElasped) {
