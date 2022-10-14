@@ -504,12 +504,15 @@ smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     return newMidiFile;
 }
 
-int playMidi(MAPPER* keyMapper, std::string & fileName) {
+bool playMidi(MAPPER* keyMapper, std::string & fileName) {
+    bool action = false;
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
     int index = 0;
     auto start = std::chrono::high_resolution_clock::now();
+    if(midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
     while (index < midifile[0].size() && !done) {
+        action = true;
         auto finish = std::chrono::high_resolution_clock::now();
         long long timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
         while (index < midifile[0].size() && midifile[0][index].seconds * 1000.f <= timeSinceStart) {
@@ -518,7 +521,7 @@ int playMidi(MAPPER* keyMapper, std::string & fileName) {
             index++;
         }
     }
-    return 0;
+    return action;
 }
 
 int playSongInputThread(MAPPER* keyMapper) {
@@ -527,9 +530,12 @@ int playSongInputThread(MAPPER* keyMapper) {
         std::cout << "Enter in midi file directory or 'exit' to quit" << std::endl << "file directory > ";
         std::cin >> selection;
         if (selection != "exit") {
-            playMidi(keyMapper, selection);
+            if (!playMidi(keyMapper, selection)) {
+                std::cout << "File not found... try arab2.mid | clairedelune.mid | SOSPIRO.mid" << std::endl;
+            }
         }
     } while (selection != "exit");
+    done = true;
 }
 
 int main(int argc, char* argv[])
