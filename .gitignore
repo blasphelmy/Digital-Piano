@@ -396,3 +396,14 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+.vscode/tasks.json
+back.cpp
+c.mid
+px860.sf2
+SOSPIRO1.mid
+SOSPIRO2.mid
+SOSPIRO3.mid
+soundfile_1.sf2
+sterogrand.sf2
+test.mid
+test.mid.bak

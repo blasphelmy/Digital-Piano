@@ -27,6 +27,8 @@ struct horizontalLine {
 };
 struct MidiTimer {
     long long timeSinceStart;
+    std::chrono::high_resolution_clock::time_point start;
+    std::chrono::high_resolution_clock::time_point finish;
     std::unordered_map<int, vector2d<int>> tickReversal;
 };
 

@@ -26,7 +26,7 @@ class MAPPER {
 public:
     std::array<key, 88>             keyMap;
     std::map<int, int>              keyIdMap;
-    std::map<int, FlyingNotes* >   activelyDrawing;
+    std::map<int, FlyingNotes* >    activelyDrawing;
     std::queue<FlyingNotes>         onScreenNoteElements;
     std::mutex                      threadLock;
     tsf* soundFile = nullptr;

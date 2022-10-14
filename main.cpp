@@ -60,7 +60,7 @@ int inputThread(MAPPER * keyMapper) {
         if (nBytes > 1) {
             //144 keys 176 pedals
             keyMapper->setKeyState((int)message[0],(int)message[1] - 21, (int)message[2]);
-        }
+        }   
     }
     // Clean up
 cleanup:
@@ -85,12 +85,12 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
     int index = 0;
-    auto start = std::chrono::high_resolution_clock::now();
+    digitalPiano->midiTimer.start = std::chrono::high_resolution_clock::now();
     if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
     while (index < midifile[0].size() && !done) {
         action = true;
-        auto finish = std::chrono::high_resolution_clock::now();
-        digitalPiano->midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+        digitalPiano->midiTimer.finish = std::chrono::high_resolution_clock::now();
+        digitalPiano->midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(digitalPiano->midiTimer.finish - digitalPiano->midiTimer.start).count();
         while (index < midifile[0].size() && midifile[0][index].seconds * 1000.f <= digitalPiano->midiTimer.timeSinceStart) {
             event = midifile[0][index];
             keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
@@ -138,8 +138,10 @@ int main(int argc, char* argv[])
 
     MAPPER* keyMapper = new MAPPER();
     DigitalPiano* app = new DigitalPiano();
+
     //MidiParser* midiParser = new MidiParser;
     keyMapper -> soundFile = soundFile;
+
     std::thread guiThreadObject(guiRenderThread, keyMapper, app);
     std::thread inputThreadObject(inputThread, keyMapper);
     std::thread loadSongInputThread(playSongInputThread, keyMapper, app);

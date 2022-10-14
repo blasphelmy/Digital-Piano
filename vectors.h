@@ -61,6 +61,45 @@ struct vector2d {
     }
 };
 
+template <class TYPE>
+struct vector3d {
+    TYPE x;
+    TYPE y;
+    vector3d(TYPE x, TYPE y, TYPE z) {
+        this->x = x;
+        this->y = y;
+    }
+    vector3d() {
+        this->x = 0;
+        this->y = 0;
+    }
+    ~vector3d() {}
+    vector3d operator + (vector3d const& obj) {
+        vector3d result;
+        result.x = x + obj.x;
+        result.y = y + obj.y;
+        return result;
+    }
+    vector3d operator - (vector3d const& obj) {
+        vector3d result;
+        result.x = x - obj.x;
+        result.y = y - obj.y;
+        return result;
+    }
+    vector3d operator * (vector3d const& obj) {
+        vector3d result;
+        result.x = x * obj.x;
+        result.y = y * obj.y;
+        return result;
+    }
+    vector3d operator / (vector3d const& obj) {
+        vector3d result;
+        result.x = x / obj.x;
+        result.y = y / obj.y;
+        return result;
+    }
+};
+
 struct vector3f {
     float x;
     float y;
