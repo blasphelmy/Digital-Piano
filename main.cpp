@@ -31,7 +31,7 @@ public:
     bool        isWhite;
     //bool active = false;
     int velocity = 0;
-public :
+public:
     explicit key() {
         this->isWhite = true;
     }
@@ -43,9 +43,9 @@ public :
     key(
         bool isWhite,
         olc::vd2d size
-        )
+    )
     {
-        this->size =    size;
+        this->size = size;
         this->isWhite = isWhite;
     };
     key(
@@ -53,9 +53,9 @@ public :
         bool        isWhite,
         olc::vd2d   position
     ) {
-        this->isWhite =  isWhite;
+        this->isWhite = isWhite;
         this->position = position;
-        this->name =     name;
+        this->name = name;
     }
     key(
         std::string name,
@@ -63,16 +63,17 @@ public :
         olc::vd2d   position,
         olc::vd2d   size
     ) {
-        this->isWhite =  isWhite;
+        this->isWhite = isWhite;
         this->position = position;
-        this->name =     name;
-        this->size =     size;
+        this->name = name;
+        this->size = size;
     }
     ~key() {
 
     }
 
 };
+
 
 class FlyingNotes : public key {
 public:
@@ -129,8 +130,8 @@ public :
         //set up white keys
         //index 0-51 : white keys
         //index 52-87 : black keys
-        olc::vd2d       whiteKeySize(1920.f / 53.f, 200);
-        olc::vd2d       blackKeySize(1920.f / 65.f, 120);
+        olc::vd2d       whiteKeySize(1920.f / 55.f, 200);
+        olc::vd2d       blackKeySize(1920.f / 70.f, 130);
         double          slice = 1920.f / 52.f;
         std::string     abc = "ABCDEFG";
         olc::vd2d       initialPos(0, 880);
@@ -180,10 +181,15 @@ public :
         initialPos = olc::vd2d(slice * 2.5, 880);
         for (int y = 53; y < 88; y = y + 5) {
             key k1(false, blackKeySize);
+            k1.name = std::string("a#");
             key k2(false, blackKeySize);
+            k2.name = std::string("c#");
             key k3(false, blackKeySize);
+            k3.name = std::string("d#");
             key k4(false, blackKeySize);
+            k4.name = std::string("f#");
             key k5(false, blackKeySize);
+            k5.name = std::string("g#");
 
             k1.position =   initialPos;
             
@@ -214,7 +220,6 @@ public :
 
 public : 
     void setKeyState(int cat, int keyId, int velocity) {
-        //std::lock_guard<std::mutex> guard(threadLock);
         threadLock.lock();
         if (cat == 144 || cat == 128) {
             if (velocity != 0) {
@@ -262,7 +267,6 @@ public :
         sAppName = "Digital Piano";
     }
     ~DigitalPiano() {
-        done = true;
     }
 public:
     MAPPER* keyMapper = nullptr;
@@ -285,7 +289,6 @@ public:
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
-
     
 private :
     olc::Pixel getColor(bool isWhite, int velocity) {
@@ -314,7 +317,6 @@ private :
         return olc::Pixel(48, 101, 150);
     }
     void drawFrame(double timeElasped) {
-        //std::lock_guard<std::mutex> guard(keyMapper->threadLock);
         keyMapper->threadLock.lock();
         double yOffSet = timeElasped * 100.f;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
@@ -417,14 +419,12 @@ smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     return newMidiFile;
 }
 
-void playMidi(MAPPER* keyMapper) {
-    std::string fileName = "SOSPIRO.mid";
+int playMidi(MAPPER* keyMapper, std::string & fileName) {
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
     int index = 0;
-    //double seconds_since_start = difftime(time(0), start);
     auto start = std::chrono::high_resolution_clock::now();
-    while (index < midifile[0].size()) {
+    while (index < midifile[0].size() && !done) {
         auto finish = std::chrono::high_resolution_clock::now();
         long long timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
         while (index < midifile[0].size() && midifile[0][index].seconds * 1000.f <= timeSinceStart) {
@@ -433,6 +433,18 @@ void playMidi(MAPPER* keyMapper) {
             index++;
         }
     }
+    return 0;
+}
+
+int playSongInputThread(MAPPER* keyMapper) {
+    std::string selection;
+    do {
+        std::cout << "Enter in midi file directory or 'exit' to quit" << std::endl << "file directory > ";
+        std::cin >> selection;
+        if (selection != "exit") {
+            playMidi(keyMapper, selection);
+        }
+    } while (selection != "exit");
 }
 
 int main(int argc, char* argv[])
@@ -459,11 +471,11 @@ int main(int argc, char* argv[])
     keyMapper -> soundFile = soundFile;
     std::thread guiThreadObject(guiRenderThread, keyMapper);
     std::thread inputThreadObject(inputThread, keyMapper);
-    
-    playMidi(keyMapper);
+    std::thread loadSongInputThread(playSongInputThread, keyMapper);
 
     inputThreadObject.join();
     guiThreadObject.join();
+    loadSongInputThread.join();
 
     delete keyMapper;
     delete soundFile;
