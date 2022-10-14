@@ -17,6 +17,7 @@
 #include <thread>
 #include <map>
 #include <queue>
+#include <mutex>
 
 bool done;
 tsf* soundFile;
@@ -91,8 +92,9 @@ public:
     std::map<int, int>              keyIdMap;
     std::map<int, FlyingNotes * >   activelyDrawing;
     std::queue<FlyingNotes>         onScreenNoteElements;
-    tsf* soundFile          = nullptr;
-    bool pedal              = false;
+    std::mutex                      threadLock;
+    tsf* soundFile =                nullptr;
+    bool pedal =                    false;
 
     struct activeNotes {
         activeNotes(int index, int keyId) {
@@ -212,6 +214,8 @@ public :
 
 public : 
     void setKeyState(int cat, int keyId, int velocity) {
+        //std::lock_guard<std::mutex> guard(threadLock);
+        threadLock.lock();
         if (cat == 144 || cat == 128) {
             if (velocity != 0) {
                 tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity) / 100.f);
@@ -230,7 +234,6 @@ public :
                     onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap[keyId])->second));
                     delete activelyDrawing.find(keyIdMap[keyId])->second;
                 }
-
                 activelyDrawing.erase(keyIdMap[keyId]);
                 if (!pedal) 
                     tsf_note_off(soundFile, 0, keyId + 21);
@@ -248,6 +251,7 @@ public :
                     break;
             }
         }
+        threadLock.unlock();
     }
 
 };
@@ -310,7 +314,8 @@ private :
         return olc::Pixel(48, 101, 150);
     }
     void drawFrame(double timeElasped) {
-        //std::cout << timeElasped * 1000 << std::endl;
+        //std::lock_guard<std::mutex> guard(keyMapper->threadLock);
+        keyMapper->threadLock.lock();
         double yOffSet = timeElasped * 100.f;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
@@ -354,6 +359,7 @@ private :
             else
                 FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
         }
+        keyMapper->threadLock.unlock();
     }
 };
 

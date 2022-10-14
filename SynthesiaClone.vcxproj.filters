@@ -66,10 +66,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="arab2.mid">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="test.mid" />
-  </ItemGroup>
 </Project>
