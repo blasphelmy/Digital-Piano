@@ -16,12 +16,57 @@
 #include <signal.h>
 #include <thread>
 #include <map>
+#include <unordered_map>
 #include <queue>
 #include <mutex>
 
 bool done;
 tsf* soundFile;
 static void finish(int ignore) { done = true; }
+
+struct vector3i {
+    int x;
+    int y;
+    int z;
+    vector3i(int x, int y, int z) {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    }
+    vector3i() {
+        this->x = 0;
+        this->y = 0;
+        this->z = 0;
+    }
+    vector3i operator + (vector3i const& obj) {
+        vector3i result;
+        result.x = x + obj.x;
+        result.y = y + obj.y;
+        result.z = z + obj.z;
+        return result;
+    }
+    vector3i operator - (vector3i const& obj) {
+        vector3i result;
+        result.x = x - obj.x;
+        result.y = y - obj.y;
+        result.z = z - obj.z;
+        return result;
+    }
+    vector3i operator * (vector3i const& obj) {
+        vector3i result;
+        result.x = x * obj.x;
+        result.y = y * obj.y;
+        result.z = z * obj.z;
+        return result;
+    }
+    vector3i operator / (vector3i const& obj) {
+        vector3i result;
+        result.x = x / obj.x;
+        result.y = y / obj.y;
+        result.z = z / obj.z;
+        return result;
+    }
+};
 
 class key {
 public:
@@ -181,15 +226,15 @@ public :
         initialPos = olc::vd2d(slice * 2.5, 880);
         for (int y = 53; y < 88; y = y + 5) {
             key k1(false, blackKeySize);
-            k1.name = std::string("a#");
+            k1.name = std::string("A");
             key k2(false, blackKeySize);
-            k2.name = std::string("c#");
+            k2.name = std::string("C");
             key k3(false, blackKeySize);
-            k3.name = std::string("d#");
+            k3.name = std::string("D");
             key k4(false, blackKeySize);
-            k4.name = std::string("f#");
+            k4.name = std::string("F");
             key k5(false, blackKeySize);
-            k5.name = std::string("g#");
+            k5.name = std::string("G");
 
             k1.position =   initialPos;
             
@@ -270,6 +315,7 @@ public :
     }
 public:
     MAPPER* keyMapper = nullptr;
+    std::unordered_map<std::string, vector3i> colorMap;
 private: 
     struct horizontalLine {
         float y = 880;
@@ -281,6 +327,13 @@ private:
     float timeAccumalator = 500.f;
 public:
     bool OnUserCreate() override {
+        colorMap["A"] = vector3i(155, 95, 224);
+        colorMap["B"] = vector3i(22, 164, 216);
+        colorMap["C"] = vector3i(96, 219, 232);
+        colorMap["D"] = vector3i(139, 211, 70);
+        colorMap["E"] = vector3i(239, 223, 72);
+        colorMap["F"] = vector3i(249, 165, 44);
+        colorMap["G"] = vector3i(214, 78, 18);
         return true;
     }
     bool OnUserUpdate(float felaspedTime) override {
@@ -291,13 +344,13 @@ public:
     }
     
 private :
-    olc::Pixel getColor(bool isWhite, int velocity) {
+    olc::Pixel getColor(bool isWhite, int velocity, std::string note) {
         if (isWhite) {
             if (velocity == 0) {
                 return olc::Pixel(255, 255, 255);
             }
             else {
-                return olc::Pixel(63, 119, 209);
+                return getDrawingColor(isWhite, note);
             }
         }
         else {
@@ -305,16 +358,19 @@ private :
                 return olc::Pixel(50, 50, 50);
             }
             else {
-                return olc::Pixel(98, 142, 217);
+                return getDrawingColor(isWhite, note);
             }
         }
         return olc::RED;
     }
-    olc::Pixel getDrawingColor(bool isWhite) {
-        if (isWhite) {
-            return olc::Pixel(72, 124, 207);
+    olc::Pixel getDrawingColor(bool isWhite, std::string note) {
+        vector3i darkMask;
+        if (!isWhite) {
+            darkMask = darkMask + vector3i(50, 50, 50);
         }
-        return olc::Pixel(48, 101, 150);
+        vector3i color = colorMap[note];
+        color = color - darkMask;
+        return olc::Pixel(color.x, color.y, color.z);
     }
     void drawFrame(double timeElasped) {
         keyMapper->threadLock.lock();
@@ -339,7 +395,7 @@ private :
 
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
-            FillRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite));
+            FillRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
             onscreenKey.position.y -= yOffSet;
 
             if (onscreenKey.position.y + onscreenKey.size.y > 0) 
@@ -350,16 +406,16 @@ private :
             
             if (keyMapper->activelyDrawing.count(i) > 0) {
                 key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                FillRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite));
+                FillRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite, drawnKey->name));
                 drawnKey->size.y += yOffSet;
                 drawnKey->position.y -= yOffSet;
             }
             key thisKey = keyMapper->keyMap[i];
             
-            if (thisKey.isWhite)
-                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
-            else
-                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
+            //if (thisKey.isWhite)
+                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
+            //else
+            //    FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
         }
         keyMapper->threadLock.unlock();
     }
