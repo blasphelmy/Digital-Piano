@@ -7,6 +7,10 @@
 #include "MidiFile.h"
 #include "RtMidi.h"
 #include "Options.h"
+#include "DigitalPiano.h"
+#include "MAPPER.h"
+#include "key.h"
+#include "vectors.h"
 #include <iostream>
 #include <chrono>
 #include <windows.h>
@@ -24,438 +28,11 @@ bool done;
 tsf* soundFile;
 static void finish(int ignore) { done = true; }
 
-struct vector3f {
-    float x;
-    float y;
-    float z;
-    vector3f(float x, float y, float z) {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }
-    vector3f() {
-        this->x = 0;
-        this->y = 0;
-        this->z = 0;
-    }
-    ~vector3f(){}
-    void setAll(float xyz) {
-        this->x = xyz;
-        this->y = xyz;
-        this->z = xyz;
-    }
-};
-
-struct vector3i {
-    int x;
-    int y;
-    int z;
-    vector3i(int x, int y, int z) {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }
-    vector3i() {
-        this->x = 0;
-        this->y = 0;
-        this->z = 0;
-    }
-    ~vector3i(){}
-    vector3i operator + (vector3i const& obj) {
-        vector3i result;
-        result.x = x + obj.x;
-        result.y = y + obj.y;
-        result.z = z + obj.z;
-        return result;
-    }
-    vector3i operator - (vector3i const& obj) {
-        vector3i result;
-        result.x = x - obj.x;
-        result.y = y - obj.y;
-        result.z = z - obj.z;
-        return result;
-    }
-    vector3i operator * (vector3f const& obj) {
-        vector3i result;
-        result.x = x * obj.x;
-        result.y = y * obj.y;
-        result.z = z * obj.z;
-        return result;
-    }
-    vector3i operator * (vector3i const& obj) {
-        vector3i result;
-        result.x = x * obj.x;
-        result.y = y * obj.y;
-        result.z = z * obj.z;
-        return result;
-    }
-    vector3i operator / (vector3i const& obj) {
-        vector3i result;
-        result.x = x / obj.x;
-        result.y = y / obj.y;
-        result.z = z / obj.z;
-        return result;
-    }
-};
-
-class key {
-public:
-    olc::vd2d   position;
-    olc::vd2d   size;
-    std::string name;
-    bool        isWhite;
-    //bool active = false;
-    int velocity = 0;
-public:
-    explicit key() {
-        this->isWhite = true;
-    }
-    key(
-        bool isWhite
-    ) {
-        this->isWhite = isWhite;
-    };
-    key(
-        bool isWhite,
-        olc::vd2d size
-    )
-    {
-        this->size = size;
-        this->isWhite = isWhite;
-    };
-    key(
-        std::string name,
-        bool        isWhite,
-        olc::vd2d   position
-    ) {
-        this->isWhite = isWhite;
-        this->position = position;
-        this->name = name;
-    }
-    key(
-        std::string name,
-        bool        isWhite,
-        olc::vd2d   position,
-        olc::vd2d   size
-    ) {
-        this->isWhite = isWhite;
-        this->position = position;
-        this->name = name;
-        this->size = size;
-    }
-    ~key() {
-
-    }
-
-};
-
-
-class FlyingNotes : public key {
-public:
-    using key::key;
-    double duration = 0.0f;
-    void addDuration(double dur) {
-        duration += dur;
-    }
-    void resetDuration() {
-        duration = 0.0f;
-    }
-};
-
-class MAPPER {
-public:
-    std::array<key, 88>             keyMap;
-    std::map<int, int>              keyIdMap;
-    std::map<int, FlyingNotes * >   activelyDrawing;
-    std::queue<FlyingNotes>         onScreenNoteElements;
-    std::mutex                      threadLock;
-    tsf* soundFile =                nullptr;
-    bool pedal =                    false;
-
-    struct activeNotes {
-        activeNotes(int index, int keyId) {
-            this->index = index;
-            this->keyId = keyId;
-        }
-        int index;
-        int keyId;
-    };
-
-    std::queue<activeNotes> activeNotesPool;
-private :
-    void flushActiveNotes() {
-        std::queue<activeNotes> newqueue;
-        while (!activeNotesPool.empty()) {
-
-            activeNotes note = activeNotesPool.front();
-            activeNotesPool.pop();
-            
-            if (keyMap[keyIdMap[note.keyId]].velocity > 0) {
-                newqueue.push(note);
-            }
-            else {
-                tsf_note_off(soundFile, 0, note.keyId+21);
-            }
-        }
-        activeNotesPool = newqueue;
-    }
-
-public : 
-    MAPPER() {
-        //set up white keys
-        //index 0-51 : white keys
-        //index 52-87 : black keys
-        olc::vd2d       whiteKeySize(1920.f / 55.f, 200);
-        olc::vd2d       blackKeySize(1920.f / 70.f, 130);
-        double          slice = 1920.f / 52.f;
-        std::string     abc = "ABCDEFG";
-        olc::vd2d       initialPos(0, 880);
-        olc::vd2d       offSet(slice, 0);
-        int             i = 0;
-        keyIdMap =  {
-                        //white keys
-                        {0, 0},{2, 1},{3, 2},{5, 3},{7, 4},
-                        {8, 5},{10, 6},{12, 7},{14, 8},{15, 9},
-                        {17, 10},{19, 11},{20, 12},{22, 13},
-                        {24, 14},{26, 15},{27, 16},{29, 17},
-                        {31, 18},{32, 19},{34, 20},{36, 21},
-                        {38, 22},{39, 23},{41, 24},{43, 25},
-                        {44, 26},{46, 27},{48, 28},{50, 29},
-                        {51, 30},{53, 31},{55, 32},{56, 33},
-                        {58, 34},{60, 35},{62, 36},{63, 37},
-                        {65, 38},{67, 39},{68, 40},{70, 41},
-                        {72, 42},{74, 43},{75, 44},{77, 45},
-                        {79, 46},{80, 47},{82, 48},{84, 49},
-                        {86, 50},{87, 51},
-
-                        //black keys
-                        {1, 52},{4, 53},{6, 54},{9, 55},{11, 56},
-                        {13, 57},{16, 58},{18, 59},{21, 60},
-                        {23, 61},{25, 62},{28, 63},{30, 64},
-                        {33, 65},{35, 66},{37, 67},{40, 68},
-                        {42, 69},{45, 70},{47, 71},{49, 72},
-                        {52, 73},{54, 74},{57, 75},{59, 76},
-                        {61, 77},{64, 78},{66, 79},{69, 80},
-                        {71, 81},{73, 82},{76, 83},{78, 84},
-                        {81, 85},{83, 86},{85, 87}
-
-                    };
-
-        while (i < 52) {
-            key newKey(std::string(1, abc.at(i % 7)), true, initialPos, whiteKeySize);
-            initialPos = initialPos + offSet;
-            keyMap[i] = newKey;
-            i++;
-        }
-        i = 52;
-        //create first a# key
-        key newKey(false, blackKeySize);
-        newKey.name = std::string("A");
-        newKey.position = olc::vd2d(slice * .5, 880);
-        keyMap[i] = newKey;
-        //create the subsequent groups of 5 black keys
-        initialPos = olc::vd2d(slice * 2.5, 880);
-        for (int y = 53; y < 88; y = y + 5) {
-            key k1(false, blackKeySize);
-            k1.name = std::string("C");
-            key k2(false, blackKeySize);
-            k2.name = std::string("D");
-            key k3(false, blackKeySize);
-            k3.name = std::string("F");
-            key k4(false, blackKeySize);
-            k4.name = std::string("G");
-            key k5(false, blackKeySize);
-            k5.name = std::string("A");
-
-            k1.position =   initialPos;
-            
-            initialPos.x =  initialPos.x + slice;
-            k2.position =   initialPos;
-
-            initialPos.x =  initialPos.x + (2 * slice);
-            k3.position =   initialPos;
-
-            initialPos.x =  initialPos.x + slice;
-            k4.position =   initialPos;
-
-            initialPos.x =  initialPos.x + slice;
-            k5.position =   initialPos;
-            initialPos.x =  initialPos.x + (2 * slice);
-
-            keyMap[y] = k1;
-            keyMap[y + 1] = k2;
-            keyMap[y + 2] = k3;
-            keyMap[y + 3] = k4;
-            keyMap[y + 4] = k5;
-
-        }
-    }
-    ~MAPPER() {
-
-    }
-
-public : 
-    void setKeyState(int cat, int keyId, int velocity) {
-        threadLock.lock();
-        if (cat == 144 || cat == 128) {
-            if (velocity != 0) {
-                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity) / 100.f);
-                activeNotesPool.push(activeNotes(0, keyId));
-                key thisKey = keyMap[keyIdMap[keyId]];
-                FlyingNotes * newFlyingNote = new FlyingNotes(thisKey.isWhite);
-                newFlyingNote->name = thisKey.name;
-                newFlyingNote->position = thisKey.position;
-                newFlyingNote->position.y = 889;
-                newFlyingNote->size = thisKey.size;
-                newFlyingNote->size.y = -1;
-                activelyDrawing.emplace(std::make_pair(keyIdMap[keyId], newFlyingNote));
-            }
-            else {
-                if (activelyDrawing.count(keyIdMap[keyId]) > 0) {
-                    onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap[keyId])->second));
-                    delete activelyDrawing.find(keyIdMap[keyId])->second;
-                }
-                activelyDrawing.erase(keyIdMap[keyId]);
-                if (!pedal) 
-                    tsf_note_off(soundFile, 0, keyId + 21);
-            }
-            keyMap[keyIdMap[keyId]].velocity = velocity;
-        }
-        else if(cat == 176) {
-            switch (pedal) {
-                case true:  
-                    pedal = false;
-                    flushActiveNotes();
-                    break;
-                case false: 
-                    pedal = true; 
-                    break;
-            }
-        }
-        threadLock.unlock();
-    }
-};
-
-class DigitalPiano : public olc::PixelGameEngine {
-public :
-    DigitalPiano() {
-        sAppName = "Digital Piano";
-    }
-    ~DigitalPiano() {
-    }
-public:
-    MAPPER* keyMapper = nullptr;
-    std::unordered_map<std::string, vector3i> colorMap;
-private: 
-    struct horizontalLine {
-        float y = 880;
-        float left = 0.f;
-        float right = 1920.f;
-    };
-    std::queue<horizontalLine> scrollingLines;
-    float targetBPM = 1.5f;
-    float timeAccumalator = 500.f;
-public:
-    bool OnUserCreate() override {
-        colorMap["C"] = vector3i(254, 0, 0);
-        colorMap["D"] = vector3i(45, 122, 142);
-        colorMap["E"] = vector3i(251, 133, 39);
-        colorMap["F"] = vector3i(146, 209, 79);
-        colorMap["G"] = vector3i(255, 255, 113);
-        colorMap["A"] = vector3i(107, 60, 200);
-        colorMap["B"] = vector3i(146, 209, 79);
-        return true;
-    }
-    bool OnUserUpdate(float felaspedTime) override {
-        Clear(olc::Pixel(143, 139, 123));
-        drawFrame(felaspedTime);
-        SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
-        return true;
-    }
-    void connectMapper(MAPPER* newMapper) {
-        keyMapper = newMapper;
-    }
-    
-private :
-    olc::Pixel getColor(bool isWhite, int velocity, std::string note) {
-        if (isWhite) {
-            if (velocity == 0) {
-                return olc::Pixel(255, 255, 255);
-            }
-            else {
-                return getDrawingColor(isWhite, note);
-            }
-        }
-        else {
-            if (velocity == 0) {
-                return olc::Pixel(50, 50, 50);
-            }
-            else {
-                return getDrawingColor(isWhite, note);
-            }
-        }
-        return olc::RED;
-    }
-    olc::Pixel getDrawingColor(bool isWhite, std::string note) {
-        vector3f darkMask(1.f, 1.f, 1.f);
-        if (!isWhite) {
-            darkMask.setAll(.7);
-        }
-        vector3i color = colorMap[note];
-        color = color * darkMask;
-        return olc::Pixel(color.x, color.y, color.z);
-    }
-    void drawFrame(double timeElasped) {
-        keyMapper->threadLock.lock();
-        double yOffSet = timeElasped * 100.f;
-        std::queue<FlyingNotes> newOnScreenElementsQueue;
-        std::queue<horizontalLine> newHorizontalLinesQueue;
-        timeAccumalator += timeElasped;
-        if (timeAccumalator > targetBPM) {
-            timeAccumalator = 0.f;
-            scrollingLines.push(horizontalLine());
-        }
-
-        while (!scrollingLines.empty()) {
-            horizontalLine line = scrollingLines.front();
-            scrollingLines.pop();
-            DrawLine(olc::vd2d(line.left, line.y), olc::vd2d(line.right, line.y), olc::BLACK);
-            line.y -= yOffSet;
-            if(line.y > 0) newHorizontalLinesQueue.push(line);
-        }
-        scrollingLines = newHorizontalLinesQueue;
-        while (!keyMapper->onScreenNoteElements.empty()) {
-
-            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
-            keyMapper->onScreenNoteElements.pop();
-            FillRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
-            onscreenKey.position.y -= yOffSet;
-
-            if (onscreenKey.position.y + onscreenKey.size.y > 0) 
-                newOnScreenElementsQueue.push(onscreenKey);
-        }
-        keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
-        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-            
-            if (keyMapper->activelyDrawing.count(i) > 0) {
-                key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                FillRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite, drawnKey->name));
-                drawnKey->size.y += yOffSet;
-                drawnKey->position.y -= yOffSet;
-            }
-            key thisKey = keyMapper->keyMap[i];
-            
-            FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
-        }
-        keyMapper->threadLock.unlock();
-    }
-};
-
-int guiRenderThread(MAPPER * keyMapper) {
-    DigitalPiano app;
-    app.connectMapper(keyMapper);
-    if (app.Construct(1920, 1080, 1, 1))
-        app.Start();
+int guiRenderThread(MAPPER * keyMapper, DigitalPiano * digitalPiano) {
+    digitalPiano->connectMapper(keyMapper);
+   /* app.connectMidiParser(newParser);*/
+    if (digitalPiano->Construct(1920, 1080, 1, 1))
+        digitalPiano->Start();
     return 0;
 }
 
@@ -495,7 +72,6 @@ static void AudioCallback(void* data, Uint8* stream, int len)
     int SampleCount = (len / (2 * sizeof(short))); //2 output channels
     tsf_render_short(soundFile, (short*)stream, SampleCount, 0);
 }
-
 smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     smf::MidiFile newMidiFile(fileName);
     newMidiFile.doTimeAnalysis();
@@ -504,34 +80,38 @@ smf::MidiFile getMidiFileRoutine(std::string& fileName) {
 
     return newMidiFile;
 }
-
-bool playMidi(MAPPER* keyMapper, std::string & fileName) {
+bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPiano) {
     bool action = false;
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
     int index = 0;
     auto start = std::chrono::high_resolution_clock::now();
-    if(midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
+    if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
     while (index < midifile[0].size() && !done) {
         action = true;
         auto finish = std::chrono::high_resolution_clock::now();
-        long long timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
-        while (index < midifile[0].size() && midifile[0][index].seconds * 1000.f <= timeSinceStart) {
+        digitalPiano->midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+        while (index < midifile[0].size() && midifile[0][index].seconds * 1000.f <= digitalPiano->midiTimer.timeSinceStart) {
             event = midifile[0][index];
-            keyMapper->setKeyState((int)event[0], (int)event[1]-21, (int)event[2]);
+            keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
+            //if (!digitalPiano->midiTimer.tickReversal[event.tick]) {
+            //    vector2d<int> newCheckpoint;
+            //    newCheckpoint.x = static_cast<int> (index);
+            //    newCheckpoint.y = event.seconds;
+            //    digitalPiano->midiTimer.tickReversal[event.tick] = newCheckpoint;
+            //}
             index++;
         }
     }
     return action;
 }
-
-int playSongInputThread(MAPPER* keyMapper) {
+int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
     std::string selection;
     do {
         std::cout << "Enter in midi file directory or 'exit' to quit" << std::endl << "file directory > ";
         std::cin >> selection;
         if (selection != "exit") {
-            if (!playMidi(keyMapper, selection)) {
+            if (playMidi(keyMapper, selection, digitalPiano)) {
                 std::cout << "File not found... try arab2.mid | clairedelune.mid | SOSPIRO.mid" << std::endl;
             }
         }
@@ -551,19 +131,18 @@ int main(int argc, char* argv[])
 
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("soundfile_1.sf2");
-
     tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
-
     SDL_OpenAudio(&OutputAudioSpec, NULL);
-
     SDL_PauseAudio(0);
 
 
     MAPPER* keyMapper = new MAPPER();
+    DigitalPiano* app = new DigitalPiano();
+    //MidiParser* midiParser = new MidiParser;
     keyMapper -> soundFile = soundFile;
-    std::thread guiThreadObject(guiRenderThread, keyMapper);
+    std::thread guiThreadObject(guiRenderThread, keyMapper, app);
     std::thread inputThreadObject(inputThread, keyMapper);
-    std::thread loadSongInputThread(playSongInputThread, keyMapper);
+    std::thread loadSongInputThread(playSongInputThread, keyMapper, app);
 
     inputThreadObject.join();
     guiThreadObject.join();
@@ -571,5 +150,6 @@ int main(int argc, char* argv[])
 
     delete keyMapper;
     delete soundFile;
+    delete app;
     return 0;
 }

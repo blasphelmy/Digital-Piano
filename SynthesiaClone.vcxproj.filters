@@ -19,50 +19,65 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RtMidi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="minisdl_audio.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Binasc.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MidiEvent.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MidiEventList.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MidiFile.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MidiMessage.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="minisdl_audio.c">
+      <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Options.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Binasc.cpp">
+      <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RtMidi.h">
+    <ClInclude Include="key.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="olcPixelGameEngineGL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tml.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tsf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="minisdl_audio.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Options.h">
+    <ClInclude Include="MAPPER.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\MidiFile.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="minisdl_audio.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="olcPixelGameEngineGL.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Options.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RtMidi.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tml.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tsf.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DigitalPiano.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vectors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MidiParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

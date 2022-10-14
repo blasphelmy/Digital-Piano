@@ -148,13 +148,18 @@
     <ClCompile Include="src\Options.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DigitalPiano.h" />
     <ClInclude Include="include\MidiFile.h" />
     <ClInclude Include="include\Options.h" />
+    <ClInclude Include="key.h" />
+    <ClInclude Include="MAPPER.h" />
+    <ClInclude Include="MidiParser.h" />
     <ClInclude Include="minisdl_audio.h" />
     <ClInclude Include="olcPixelGameEngineGL.h" />
     <ClInclude Include="RtMidi.h" />
     <ClInclude Include="tml.h" />
     <ClInclude Include="tsf.h" />
+    <ClInclude Include="vectors.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
