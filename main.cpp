@@ -38,6 +38,7 @@ struct vector3f {
         this->y = 0;
         this->z = 0;
     }
+    ~vector3f(){}
     void setAll(float xyz) {
         this->x = xyz;
         this->y = xyz;
@@ -59,6 +60,7 @@ struct vector3i {
         this->y = 0;
         this->z = 0;
     }
+    ~vector3i(){}
     vector3i operator + (vector3i const& obj) {
         vector3i result;
         result.x = x + obj.x;
@@ -332,7 +334,6 @@ public :
         }
         threadLock.unlock();
     }
-
 };
 
 class DigitalPiano : public olc::PixelGameEngine {
@@ -370,6 +371,9 @@ public:
         drawFrame(felaspedTime);
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
+    }
+    void connectMapper(MAPPER* newMapper) {
+        keyMapper = newMapper;
     }
     
 private :
@@ -441,10 +445,7 @@ private :
             }
             key thisKey = keyMapper->keyMap[i];
             
-            //if (thisKey.isWhite)
-                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
-            //else
-            //    FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity));
+            FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
         }
         keyMapper->threadLock.unlock();
     }
@@ -452,7 +453,7 @@ private :
 
 int guiRenderThread(MAPPER * keyMapper) {
     DigitalPiano app;
-    app.keyMapper = keyMapper;
+    app.connectMapper(keyMapper);
     if (app.Construct(1920, 1080, 1, 1))
         app.Start();
     return 0;
@@ -541,11 +542,11 @@ int playSongInputThread(MAPPER* keyMapper) {
 int main(int argc, char* argv[])
 {
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq =      32000;
-    OutputAudioSpec.format =    AUDIO_S16;
-    OutputAudioSpec.channels =  2;
-    OutputAudioSpec.samples =   1024;
-    OutputAudioSpec.callback =  AudioCallback;
+    OutputAudioSpec.freq        = 32000;
+    OutputAudioSpec.format      = AUDIO_S16;
+    OutputAudioSpec.channels    = 2;
+    OutputAudioSpec.samples     = 1024;
+    OutputAudioSpec.callback    = AudioCallback;
     int dcbGain = 5;
 
     SDL_AudioInit(NULL);
