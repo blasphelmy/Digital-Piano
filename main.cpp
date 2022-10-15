@@ -84,23 +84,41 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     bool action = false;
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
-    int index = 0;
-    digitalPiano->midiTimer.start = std::chrono::high_resolution_clock::now();
+    MidiTimer &midiTimer = digitalPiano->midiTimer;
+    midiTimer.index = 0;
+    midiTimer.start = std::chrono::high_resolution_clock::now();
+
     if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
-    while (index < midifile[0].size() && !done) {
+    while (midiTimer.index < midifile[0].size() && !done) {
         action = true;
-        digitalPiano->midiTimer.finish = std::chrono::high_resolution_clock::now();
-        digitalPiano->midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(digitalPiano->midiTimer.finish - digitalPiano->midiTimer.start).count();
-        while (index < midifile[0].size() && midifile[0][index].seconds * 1000.f <= digitalPiano->midiTimer.timeSinceStart) {
-            event = midifile[0][index];
+        while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
+            midiTimer.index--;
+            if (midiTimer.index < 0) {
+                midiTimer.index = 0;
+                break;
+            }
+            if (midifile[0][midiTimer.index].seconds * 1000.f < midiTimer.timeSinceStart) {
+                break;
+            }
+        }
+
+        while (midiTimer.flag == 2 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
+            midiTimer.index++;
+            if (midiTimer.index > midifile[0].size()) {
+                midiTimer.index = midifile[0].size() - 1;
+                break;
+            }
+            if (midifile[0][midiTimer.index].seconds * 1000.f > midiTimer.timeSinceStart) {
+                break;
+            }
+        }
+
+        midiTimer.finish = std::chrono::high_resolution_clock::now();
+        midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
+        while (midiTimer.index < midifile[0].size() && midiTimer.flag == 0 && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) {
+            event = midifile[0][midiTimer.index];
             keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
-            //if (!digitalPiano->midiTimer.tickReversal[event.tick]) {
-            //    vector2d<int> newCheckpoint;
-            //    newCheckpoint.x = static_cast<int> (index);
-            //    newCheckpoint.y = event.seconds;
-            //    digitalPiano->midiTimer.tickReversal[event.tick] = newCheckpoint;
-            //}
-            index++;
+            midiTimer.index++;
         }
     }
     return action;

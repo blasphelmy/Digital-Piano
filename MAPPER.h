@@ -65,7 +65,7 @@ public:
         //set up white keys
         //index 0-51 : white keys
         //index 52-87 : black keys
-        olc::vd2d       whiteKeySize(1920.f / 55.f, 200);
+        olc::vd2d       whiteKeySize(1920.f / 54.f, 200);
         olc::vd2d       blackKeySize(1920.f / 70.f, 130);
         double          slice = 1920.f / 52.f;
         std::string     abc = "ABCDEFG";
@@ -172,7 +172,7 @@ public:
                     onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap[keyId])->second));
                     delete activelyDrawing.find(keyIdMap[keyId])->second;
                 }
-                activelyDrawing.erase(keyIdMap[keyId]);
+                if(keyMap[keyIdMap[keyId]].velocity > 0) activelyDrawing.erase(keyIdMap[keyId]);
                 if (!pedal)
                     tsf_note_off(soundFile, 0, keyId + 21);
             }
