@@ -21,17 +21,16 @@
 #include <queue>
 #include <mutex>
 struct horizontalLine {
-    float y = 880;
-    float left = 0.f;
+    float y     = 880;
+    float left  = 0.f;
     float right = 1920.f;
 };
 struct MidiTimer {
-    int flag = 0;
-    int index = 0;
-    long long timeSinceStart;
-    std::chrono::high_resolution_clock::time_point start;
-    std::chrono::high_resolution_clock::time_point finish;
-    std::unordered_map<int, vector2d<int>> tickReversal;
+    std::chrono::high_resolution_clock::time_point  start;
+    std::chrono::high_resolution_clock::time_point  finish;
+    int flag                 = 0;
+    int index                = 0;
+    long long timeSinceStart = 0;
     std::mutex midiLock;
 };
 
@@ -43,13 +42,13 @@ public:
     ~DigitalPiano() {
     }
 public:
+    std::unordered_map<std::string, vector3i> colorMap;
     MAPPER*     keyMapper = nullptr;
     MidiTimer   midiTimer;
-    std::unordered_map<std::string, vector3i> colorMap;
 private:
     std::queue<horizontalLine> scrollingLines;
-    float targetBPM = 1.5f;
     float timeAccumalator = 500.f;
+    float targetBPM       = 1.5f;
 public:
     void SeekRoutine(int direction) {
         std::queue<FlyingNotes> reset;
@@ -69,6 +68,7 @@ public:
             }
         }
         keyMapper->onScreenNoteElements = reset;
+        keyMapper->threadLock.unlock();
     }
     bool OnUserCreate() override {
         colorMap["C"] = vector3i(254, 0, 0);
@@ -89,7 +89,6 @@ public:
             midiTimer.finish = std::chrono::high_resolution_clock::now();
             midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
             SeekRoutine(-1);
-            keyMapper->threadLock.unlock();
             midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
         }else if (GetKey(olc::Key::RIGHT).bPressed) {
@@ -99,12 +98,9 @@ public:
             midiTimer.finish = std::chrono::high_resolution_clock::now();
             midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
             SeekRoutine(1);
-            keyMapper->threadLock.unlock();
             midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
         }
-
-        
         Clear(olc::Pixel(40, 40, 40));
         drawFrame(felaspedTime);
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
@@ -120,7 +116,7 @@ public:
     //    midiParser = newParser;
     //}
 private:
-    olc::Pixel getColor(bool isWhite, int velocity, std::string note) {
+    olc::Pixel getColor(bool isWhite, int velocity, std::string & note) {
         if (isWhite) {
             if (velocity == 0) {
                 return olc::Pixel(210, 210, 210);
@@ -139,10 +135,10 @@ private:
         }
         return olc::RED;
     }
-    olc::Pixel getDrawingColor(bool isWhite, std::string note) {
-        vector3f darkMask(0.8, 0.8, 0.8);
+    olc::Pixel getDrawingColor(bool isWhite, std::string & note) {
+        vector3f darkMask(.8, .8, .8);
         if (!isWhite) {
-            darkMask.setAll(.6);
+            darkMask.setAll(.4);
         }
         vector3i color = colorMap[note];
         color = color * darkMask;
@@ -150,7 +146,7 @@ private:
     }
     void FillRoundedRect(olc::vd2d pos, olc::vd2d size, double radius, olc::Pixel color) {
         //FillRect(pos, size, olc::WHITE);
-        //PATCH FOR SMALL RECTANGLES... relationship is with radius
+        //PATCH FOR SMALL RECTANGLES... relationship is with radius...
         if (size.y < 24) {
             size.y = 24;
         }
