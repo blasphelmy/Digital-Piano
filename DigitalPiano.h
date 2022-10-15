@@ -51,6 +51,25 @@ private:
     float targetBPM = 1.5f;
     float timeAccumalator = 500.f;
 public:
+    void SeekRoutine(int direction) {
+        std::queue<FlyingNotes> reset;
+        keyMapper->threadLock.lock();
+        while (!keyMapper->onScreenNoteElements.empty()) {
+            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
+            keyMapper->onScreenNoteElements.pop();
+            onscreenKey.position.y += 100.f * -1 * direction;
+            if (onscreenKey.position.y < 880.f) {
+                reset.push(onscreenKey);
+            }
+        }
+        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
+            keyMapper->keyMap[i].velocity = 0;
+            if (keyMapper->activelyDrawing.count(i) > 0) {
+                keyMapper->activelyDrawing.erase(i);
+            }
+        }
+        keyMapper->onScreenNoteElements = reset;
+    }
     bool OnUserCreate() override {
         colorMap["C"] = vector3i(254, 0, 0);
         colorMap["D"] = vector3i(45, 122, 142);
@@ -69,21 +88,7 @@ public:
             midiTimer.start += std::chrono::milliseconds(1000);
             midiTimer.finish = std::chrono::high_resolution_clock::now();
             midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
-            std::queue<FlyingNotes> reset;
-            keyMapper->threadLock.lock();
-            while (!keyMapper->onScreenNoteElements.empty()) {
-                FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
-                keyMapper->onScreenNoteElements.pop();
-                onscreenKey.position.y += 100.f;
-                reset.push(onscreenKey);
-            }
-            for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-                keyMapper->keyMap[i].velocity = 0;
-                if (keyMapper->activelyDrawing.count(i) > 0) {
-                    keyMapper->activelyDrawing.erase(i);
-                }
-            }
-            keyMapper->onScreenNoteElements = reset;
+            SeekRoutine(-1);
             keyMapper->threadLock.unlock();
             midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
@@ -93,21 +98,7 @@ public:
             midiTimer.start -= std::chrono::milliseconds(1000);
             midiTimer.finish = std::chrono::high_resolution_clock::now();
             midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
-            std::queue<FlyingNotes> reset;
-            keyMapper->threadLock.lock();
-            while (!keyMapper->onScreenNoteElements.empty()) {
-                FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
-                keyMapper->onScreenNoteElements.pop();
-                onscreenKey.position.y -= 100.f;
-                reset.push(onscreenKey);
-            }
-            for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-                keyMapper->keyMap[i].velocity = 0;
-                if (keyMapper->activelyDrawing.count(i) > 0) {
-                    keyMapper->activelyDrawing.erase(i);
-                }
-            }
-            keyMapper->onScreenNoteElements = reset;
+            SeekRoutine(1);
             keyMapper->threadLock.unlock();
             midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
