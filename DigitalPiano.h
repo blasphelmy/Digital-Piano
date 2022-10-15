@@ -64,6 +64,9 @@ public:
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
+    bool OnUserDestroy() override{
+        return true;
+    }
     void connectMapper(MAPPER* newMapper) {
         keyMapper = newMapper;
     }
@@ -99,7 +102,31 @@ private:
         color = color * darkMask;
         return olc::Pixel(color.x, color.y, color.z);
     }
+    void _DrawRoundedRect(olc::vd2d pos, olc::vd2d size, double radius, olc::Pixel color) {
+        //FillRect(pos, size, olc::WHITE);
+        if (size.y < 20) {
+            size.y = 20;
+        }
+        olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
+        olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
+        FillRect(innerRect_pos, innerRect + olc::vd2d(3.0, 3.0), color);
+
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y + 1.0), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x + 1.0, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+
+        FillCircle(innerRect_pos, radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y + innerRect.y), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y), radius, color);
+    }
+
     void drawFrame(double timeElasped) {
+        //FillCircle(olc::vi2d(40, 40), 20, olc::WHITE);
+        //FillRect(olc::vd2d(10, 10), olc::vd2d(30, 100), olc::WHITE);
+ /*       _DrawRoundedRect(olc::vd2d(10, 10), olc::vd2d(100,300), 5.0, olc::WHITE);*/
         keyMapper->threadLock.lock();
         double yOffSet = timeElasped * 100.f;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
@@ -122,7 +149,7 @@ private:
 
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
-            FillRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
+            _DrawRoundedRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), 10.0, getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
             onscreenKey.position.y -= yOffSet;
 
             if (onscreenKey.position.y + onscreenKey.size.y > 0)
@@ -133,13 +160,13 @@ private:
 
             if (keyMapper->activelyDrawing.count(i) > 0) {
                 key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                FillRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite, drawnKey->name));
+                _DrawRoundedRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), 10.0, getDrawingColor(drawnKey->isWhite, drawnKey->name));
                 drawnKey->size.y += yOffSet;
                 drawnKey->position.y -= yOffSet;
             }
             key thisKey = keyMapper->keyMap[i];
 
-            FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
+            _DrawRoundedRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), 10.0,  getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
         }
         keyMapper->threadLock.unlock();
     }
