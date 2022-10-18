@@ -26,7 +26,6 @@ struct horizontalLine {
     float right = 1920.f;
 };
 struct MidiTimer {
-    smf::MidiFile track;
     std::chrono::high_resolution_clock::time_point  start;
     std::chrono::high_resolution_clock::time_point  finish;
     int flag                 = 0;
@@ -94,7 +93,7 @@ public:
         }
         Clear(olc::Pixel(40, 40, 40));
         drawFrame(felaspedTime);
-        DrawString(10, 10, "Speed : x" + std::to_string(midiTimer.speed), olc::WHITE);
+        drawData();
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
@@ -105,6 +104,9 @@ public:
         keyMapper = newMapper;
     }
 private:
+    void drawData() {
+        DrawString(10, 10, "Speed (up/down) : x" + std::to_string(midiTimer.speed), olc::WHITE);
+    }
     void SeekRoutine(int direction, uint32_t timeOffset) {
         midiTimer.timeSinceStart += timeOffset;
         std::queue<FlyingNotes> reset;
@@ -179,9 +181,6 @@ private:
     }
 
     void drawFrame(double timeElasped) {
-        //FillCircle(olc::vi2d(40, 40), 20, olc::WHITE);
-        //FillRect(olc::vd2d(10, 10), olc::vd2d(30, 100), olc::WHITE);
- /*       FillRoundedRect(olc::vd2d(10, 10), olc::vd2d(100,300), 5.0, olc::WHITE);*/
         keyMapper->threadLock.lock();
         double yOffSet = timeElasped * 100.f;
         std::queue<FlyingNotes> newOnScreenElementsQueue;

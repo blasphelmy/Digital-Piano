@@ -81,9 +81,9 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
     MidiTimer &midiTimer = digitalPiano->midiTimer;
-    midiTimer.track = midifile;
     midiTimer.index = 0;
     midiTimer.start = std::chrono::high_resolution_clock::now();
+    midiTimer.timeSinceStart = 0.0;
 
     if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
     while (midiTimer.index < midifile[0].size() && !done) {
