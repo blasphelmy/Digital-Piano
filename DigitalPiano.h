@@ -32,6 +32,10 @@ struct MidiTimer {
     int index                = 0;
     long long timeSinceStart = 0.0;
     double speed             = 1.0;
+    double ticks             = 0;
+    int TPQ                  = 0;
+    float qNotePerSec        = 1.5f;
+    float duration           = 0.f;
     std::mutex midiLock;
     void tick() {
         this->finish = std::chrono::high_resolution_clock::now();
@@ -103,9 +107,13 @@ public:
     void connectMapper(MAPPER* newMapper) {
         keyMapper = newMapper;
     }
+    void playSignal() {
+        timeAccumalator = 0.f;
+    }
 private:
     void drawData() {
-        DrawString(10, 10, "Speed (up/down) : x" + std::to_string(midiTimer.speed), olc::WHITE);
+        DrawString(10, 10, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE);
+        DrawString(10, 20, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
     }
     void SeekRoutine(int direction, uint32_t timeOffset) {
         midiTimer.timeSinceStart += timeOffset;
@@ -185,8 +193,8 @@ private:
         double yOffSet = timeElasped * 100.f;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
-        timeAccumalator += timeElasped;
-        if (timeAccumalator > targetBPM) {
+        timeAccumalator += timeElasped * midiTimer.speed;
+        if (timeAccumalator > midiTimer.qNotePerSec * 2) {
             timeAccumalator = 0.f;
             scrollingLines.push(horizontalLine());
         }

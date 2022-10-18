@@ -82,13 +82,17 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     smf::MidiEvent event;
     MidiTimer &midiTimer = digitalPiano->midiTimer;
     midiTimer.index = 0;
-    midiTimer.start = std::chrono::high_resolution_clock::now();
     midiTimer.timeSinceStart = 0.0;
+    midiTimer.qNotePerSec = midifile.getFileDurationInSeconds() / midifile.getFileDurationInTicks() * midifile.getTicksPerQuarterNote();
+    midiTimer.duration = midifile.getFileDurationInSeconds();
 
     if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
+    digitalPiano->playSignal();
+    midiTimer.start = std::chrono::high_resolution_clock::now();
     while (midiTimer.index < midifile[0].size() && !done) {
         action = true;
         midiTimer.tick();
+        midiTimer.ticks = midifile.getAbsoluteTickTime(event.seconds);
         while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
             midiTimer.index--;
             if (midiTimer.index < 0) {
@@ -136,7 +140,7 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
 int main(int argc, char* argv[])
 {
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq        = 32000;
+    OutputAudioSpec.freq        = 44000;
     OutputAudioSpec.format      = AUDIO_S16;
     OutputAudioSpec.channels    = 2;
     OutputAudioSpec.samples     = 1024;
