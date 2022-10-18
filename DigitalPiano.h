@@ -109,6 +109,8 @@ public:
     }
     void playSignal() {
         timeAccumalator = 0.f;
+        //first two variable is garbage. remember to fix
+        keyMapper->pedal = false;
     }
 private:
     void drawData() {
