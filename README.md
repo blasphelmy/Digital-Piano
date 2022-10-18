@@ -21,4 +21,4 @@ You can also use a standard 88 key keyboard with this app.
 
 ### Notes
 
-You may encunter bugs building and running the app in visual studio. Build first, then copy resource files to build directory (mid and sf2 files)
+You may encunter bugs building and running the app in visual studio. Build first, then copy resource files to build directory (mid and sf2 files) then run the exe outside of the debug enviorment.
