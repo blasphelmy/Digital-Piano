@@ -194,7 +194,7 @@ private:
         std::queue<FlyingNotes> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
         timeAccumalator += timeElasped * midiTimer.speed;
-        if (timeAccumalator > midiTimer.qNotePerSec * 2) {
+        if (timeAccumalator > midiTimer.qNotePerSec) {
             timeAccumalator = 0.f;
             scrollingLines.push(horizontalLine());
         }
