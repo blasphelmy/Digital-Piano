@@ -1100,7 +1100,8 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 	float* outR = (f->outputmode == TSF_STEREO_UNWEAVED ? outL + numSamples : TSF_NULL);
 
 	// Cache some values, to give them at least some chance of ending up in registers.
-	TSF_BOOL updateModEnv = (region->modEnvToPitch || region->modEnvToFilterFc);
+	TSF_BOOL updateModEnv;
+	if(region != nullptr) updateModEnv = (region->modEnvToPitch || region->modEnvToFilterFc);
 	TSF_BOOL updateModLFO = (v->modlfo.delta && (region->modLfoToPitch || region->modLfoToFilterFc || region->modLfoToVolume));
 	TSF_BOOL updateVibLFO = (v->viblfo.delta && (region->vibLfoToPitch));
 	TSF_BOOL isLooping    = (v->loopStart < v->loopEnd);
