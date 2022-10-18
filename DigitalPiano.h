@@ -78,14 +78,14 @@ public:
         if (GetKey(olc::Key::LEFT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
-            SeekRoutine(-1, 1000);
-            midiTimer.flag = 0;
+            SeekRoutine(-1, 1000.f);
+            //midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
         }else if (GetKey(olc::Key::RIGHT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 2;
-            SeekRoutine(1, 1000);
-            midiTimer.flag = 0;
+            SeekRoutine(1, 1000.f);
+            //midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
         }
 
@@ -115,8 +115,13 @@ private:
         DrawString(10, 10, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE);
         DrawString(10, 20, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
     }
-    void SeekRoutine(int direction, uint32_t timeOffset) {
-        midiTimer.timeSinceStart += timeOffset;
+    void SeekRoutine(int direction, float timeOffset) {
+        if (direction == -1) {
+            midiTimer.timeSinceStart -= timeOffset;
+        }
+        else {
+            midiTimer.timeSinceStart += timeOffset;
+        }
         std::queue<FlyingNotes> reset;
         keyMapper->threadLock.lock();
         while (!keyMapper->onScreenNoteElements.empty()) {

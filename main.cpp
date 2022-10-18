@@ -84,6 +84,9 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     midiTimer.index = 0;
     midiTimer.timeSinceStart = 0.0;
     midiTimer.qNotePerSec = midifile.getFileDurationInSeconds() / midifile.getFileDurationInTicks() * midifile.getTicksPerQuarterNote();
+    if (midiTimer.qNotePerSec < .5) {
+        midiTimer.qNotePerSec = .5;
+    }
     midiTimer.duration = midifile.getFileDurationInSeconds();
 
     if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
@@ -97,20 +100,24 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             midiTimer.index--;
             if (midiTimer.index < 0) {
                 midiTimer.index = 0;
+                midiTimer.flag = 0;
                 break;
             }
             if (midifile[0][midiTimer.index].seconds * 1000.f < midiTimer.timeSinceStart) {
+                midiTimer.flag = 0;
                 break;
             }
         }
 
-        while (midiTimer.flag == 2 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
+        while (midiTimer.flag == 2 && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) {
             midiTimer.index++;
             if (midiTimer.index > midifile[0].size() - 1) {
                 midiTimer.index = midifile[0].size() - 1;
+                midiTimer.flag = 0;
                 break;
             }
             if (midifile[0][midiTimer.index].seconds * 1000.f > midiTimer.timeSinceStart) {
+                midiTimer.flag = 0;
                 break;
             }
         }
@@ -140,7 +147,7 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
 int main(int argc, char* argv[])
 {
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq        = 44000;
+    OutputAudioSpec.freq        = 32000;
     OutputAudioSpec.format      = AUDIO_S16;
     OutputAudioSpec.channels    = 2;
     OutputAudioSpec.samples     = 1024;
@@ -152,7 +159,6 @@ int main(int argc, char* argv[])
     tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
     SDL_OpenAudio(&OutputAudioSpec, NULL);
     SDL_PauseAudio(0);
-
 
     MAPPER* keyMapper = new MAPPER();
     DigitalPiano* app = new DigitalPiano();
