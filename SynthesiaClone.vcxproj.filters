@@ -77,8 +77,5 @@
     <ClInclude Include="vectors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MidiParser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

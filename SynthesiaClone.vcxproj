@@ -153,7 +153,6 @@
     <ClInclude Include="include\Options.h" />
     <ClInclude Include="key.h" />
     <ClInclude Include="MAPPER.h" />
-    <ClInclude Include="MidiParser.h" />
     <ClInclude Include="minisdl_audio.h" />
     <ClInclude Include="olcPixelGameEngineGL.h" />
     <ClInclude Include="RtMidi.h" />

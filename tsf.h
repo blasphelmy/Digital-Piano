@@ -345,7 +345,7 @@ struct tsf
 
 #ifndef TSF_NO_STDIO
 static int tsf_stream_stdio_read(FILE* f, void* ptr, unsigned int size) { return (int)fread(ptr, 1, size, f); }
-static int tsf_stream_stdio_skip(FILE* f, unsigned int count) { return !fseek(f, count, SEEK_CUR); }
+static int tsf_stream_stdio_skip(FILE* f, unsigned int count) { return ~fseek(f, count, SEEK_CUR); }
 TSFDEF tsf* tsf_load_filename(const char* filename)
 {
 	tsf* res;

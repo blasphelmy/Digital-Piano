@@ -1,7 +1,4 @@
-#define __WINDOWS_MM__
-#define OLC_PGE_APPLICATION
 #include "olcPixelGameEngineGL.h"
-#define TSF_IMPLEMENTATION
 #include "tsf.h"
 #include "minisdl_audio.h"
 #include "MidiFile.h"
@@ -30,7 +27,6 @@ static void finish(int ignore) { done = true; }
 
 int guiRenderThread(MAPPER * keyMapper, DigitalPiano * digitalPiano) {
     digitalPiano->connectMapper(keyMapper);
-   /* app.connectMidiParser(newParser);*/
     if (digitalPiano->Construct(1920, 1080, 1, 1))
         digitalPiano->Start();
     return 0;
@@ -85,12 +81,14 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     smf::MidiFile midifile = getMidiFileRoutine(fileName);
     smf::MidiEvent event;
     MidiTimer &midiTimer = digitalPiano->midiTimer;
+    midiTimer.track = midifile;
     midiTimer.index = 0;
     midiTimer.start = std::chrono::high_resolution_clock::now();
 
     if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
     while (midiTimer.index < midifile[0].size() && !done) {
         action = true;
+        midiTimer.tick();
         while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
             midiTimer.index--;
             if (midiTimer.index < 0) {
@@ -104,7 +102,7 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
 
         while (midiTimer.flag == 2 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
             midiTimer.index++;
-            if (midiTimer.index > midifile[0].size()) {
+            if (midiTimer.index > midifile[0].size() - 1) {
                 midiTimer.index = midifile[0].size() - 1;
                 break;
             }
@@ -112,14 +110,12 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
                 break;
             }
         }
-
-        midiTimer.finish = std::chrono::high_resolution_clock::now();
-        midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
         while (midiTimer.index < midifile[0].size() && midiTimer.flag == 0 && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) {
             event = midifile[0][midiTimer.index];
             keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
         }
+        Sleep(1);
     }
     return action;
 }
@@ -156,8 +152,6 @@ int main(int argc, char* argv[])
 
     MAPPER* keyMapper = new MAPPER();
     DigitalPiano* app = new DigitalPiano();
-
-    //MidiParser* midiParser = new MidiParser;
     keyMapper -> soundFile = soundFile;
 
     std::thread guiThreadObject(guiRenderThread, keyMapper, app);

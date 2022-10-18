@@ -8,7 +8,6 @@
 #include "DigitalPiano.h"
 #include "MAPPER.h"
 #include "key.h"
-#include "MidiParser.h"
 #include <iostream>
 #include <chrono>
 #include <windows.h>

@@ -26,12 +26,21 @@ struct horizontalLine {
     float right = 1920.f;
 };
 struct MidiTimer {
+    smf::MidiFile track;
     std::chrono::high_resolution_clock::time_point  start;
     std::chrono::high_resolution_clock::time_point  finish;
     int flag                 = 0;
     int index                = 0;
-    long long timeSinceStart = 0;
+    long long timeSinceStart = 0.0;
+    double speed             = 1.0;
     std::mutex midiLock;
+    void tick() {
+        this->finish = std::chrono::high_resolution_clock::now();
+        this->timeSinceStart = (this->timeSinceStart + (std::chrono::duration_cast<std::chrono::milliseconds>(this->finish - this->start).count() * this->speed));
+        this->start = std::chrono::high_resolution_clock::now();
+        if (speed > 3) speed = 3;
+        if (speed < 0) speed = 0;
+    }
 };
 
 class DigitalPiano : public olc::PixelGameEngine {
@@ -42,15 +51,62 @@ public:
     ~DigitalPiano() {
     }
 public:
-    std::unordered_map<std::string, vector3i> colorMap;
     MAPPER*     keyMapper = nullptr;
     MidiTimer   midiTimer;
 private:
+    std::unordered_map<std::string, vector3i> colorMap;
     std::queue<horizontalLine> scrollingLines;
     float timeAccumalator = 500.f;
     float targetBPM       = 1.5f;
+
 public:
-    void SeekRoutine(int direction) {
+    bool OnUserCreate() override {
+        colorMap["C"] = vector3i(254, 0, 0);
+        colorMap["D"] = vector3i(45, 122, 142);
+        colorMap["E"] = vector3i(251, 133, 39);
+        colorMap["F"] = vector3i(146, 209, 79);
+        colorMap["G"] = vector3i(255, 255, 113);
+        colorMap["A"] = vector3i(107, 60, 200);
+        colorMap["B"] = vector3i(146, 209, 79);
+        return true;
+    }
+    bool OnUserUpdate(float felaspedTime) override {
+        
+        if (GetKey(olc::Key::LEFT).bPressed) {
+            midiTimer.midiLock.lock();
+            midiTimer.flag = 1;
+            SeekRoutine(-1, 1000);
+            midiTimer.flag = 0;
+            midiTimer.midiLock.unlock();
+        }else if (GetKey(olc::Key::RIGHT).bPressed) {
+            midiTimer.midiLock.lock();
+            midiTimer.flag = 2;
+            SeekRoutine(1, 1000);
+            midiTimer.flag = 0;
+            midiTimer.midiLock.unlock();
+        }
+
+        if (GetKey(olc::Key::UP).bPressed) {
+            midiTimer.speed = midiTimer.speed + .1;
+        }
+        if (GetKey(olc::Key::DOWN).bPressed) {
+            midiTimer.speed = midiTimer.speed - .1;
+        }
+        Clear(olc::Pixel(40, 40, 40));
+        drawFrame(felaspedTime);
+        DrawString(10, 10, "Speed : x" + std::to_string(midiTimer.speed), olc::WHITE);
+        SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
+        return true;
+    }
+    bool OnUserDestroy() override{
+        return true;
+    }
+    void connectMapper(MAPPER* newMapper) {
+        keyMapper = newMapper;
+    }
+private:
+    void SeekRoutine(int direction, uint32_t timeOffset) {
+        midiTimer.timeSinceStart += timeOffset;
         std::queue<FlyingNotes> reset;
         keyMapper->threadLock.lock();
         while (!keyMapper->onScreenNoteElements.empty()) {
@@ -70,51 +126,7 @@ public:
         keyMapper->onScreenNoteElements = reset;
         keyMapper->threadLock.unlock();
     }
-    bool OnUserCreate() override {
-        colorMap["C"] = vector3i(254, 0, 0);
-        colorMap["D"] = vector3i(45, 122, 142);
-        colorMap["E"] = vector3i(251, 133, 39);
-        colorMap["F"] = vector3i(146, 209, 79);
-        colorMap["G"] = vector3i(255, 255, 113);
-        colorMap["A"] = vector3i(107, 60, 200);
-        colorMap["B"] = vector3i(146, 209, 79);
-        return true;
-    }
-    bool OnUserUpdate(float felaspedTime) override {
-        
-        if (GetKey(olc::Key::LEFT).bPressed) {
-            midiTimer.midiLock.lock();
-            midiTimer.flag = 1;
-            midiTimer.start += std::chrono::milliseconds(1000);
-            midiTimer.finish = std::chrono::high_resolution_clock::now();
-            midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
-            SeekRoutine(-1);
-            midiTimer.flag = 0;
-            midiTimer.midiLock.unlock();
-        }else if (GetKey(olc::Key::RIGHT).bPressed) {
-            midiTimer.midiLock.lock();
-            midiTimer.flag = 2;
-            midiTimer.start -= std::chrono::milliseconds(1000);
-            midiTimer.finish = std::chrono::high_resolution_clock::now();
-            midiTimer.timeSinceStart = std::chrono::duration_cast<std::chrono::milliseconds>(midiTimer.finish - midiTimer.start).count();
-            SeekRoutine(1);
-            midiTimer.flag = 0;
-            midiTimer.midiLock.unlock();
-        }
-        Clear(olc::Pixel(40, 40, 40));
-        drawFrame(felaspedTime);
-        SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
-        return true;
-    }
-    bool OnUserDestroy() override{
-        return true;
-    }
-    void connectMapper(MAPPER* newMapper) {
-        keyMapper = newMapper;
-    }
-    //void connectMidiParser(MidiParser* newParser) {
-    //    midiParser = newParser;
-    //}
+
 private:
     olc::Pixel getColor(bool isWhite, int velocity, std::string & note) {
         if (isWhite) {
