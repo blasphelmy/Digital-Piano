@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
+#include <filesystem>
 
 bool done;
 tsf* soundFile;
@@ -71,7 +72,7 @@ static void AudioCallback(void* data, Uint8* stream, int len)
 smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     smf::MidiFile newMidiFile(fileName);
     newMidiFile.doTimeAnalysis();
-    newMidiFile.linkNotePairs();
+    //newMidiFile.linkNotePairs();
     newMidiFile.joinTracks(); // we only care about 1 track right now
 
     return newMidiFile;
@@ -88,14 +89,13 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
         midiTimer.qNotePerSec = .5;
     }
     midiTimer.duration = midifile.getFileDurationInSeconds();
-
-    if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
+    midiTimer.fileName = midifile.getFilename();
+    //if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
     digitalPiano->playSignal();
     midiTimer.start = std::chrono::high_resolution_clock::now();
-    while (midiTimer.index < midifile[0].size() && !done) {
+    while (midiTimer.index < midifile[0].size() && !done && midiTimer.flag != -1) {
         action = true;
         midiTimer.tick();
-        midiTimer.ticks = midifile.getAbsoluteTickTime(event.seconds);
         while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
             midiTimer.index--;
             if (midiTimer.index < 0) {
@@ -126,25 +126,23 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
         }
-        Sleep(1);
+        Sleep(5);
     }
+    midiTimer.isPlaying = false;
     return action;
 }
 int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
     std::string selection;
     do {
-        std::cout << "Enter in midi file directory or 'exit' to quit" << std::endl << "file directory > ";
-        std::cin >> selection;
-        if (selection != "exit") {
-            if (playMidi(keyMapper, selection, digitalPiano)) {
-                std::cout << "File not found... try arab2.mid | clairedelune.mid | SOSPIRO.mid" << std::endl;
-            }
+        if (digitalPiano->midiTimer.isPlaying) {
+            playMidi(keyMapper, digitalPiano->midiTimer.fileName, digitalPiano);
         }
-    } while (selection != "exit");
+        Sleep(10);
+    } while (digitalPiano->midiTimer.flag != -1);
     done = true;
 }
 
-int main(int argc, char* argv[])
+int main()
 {
     SDL_AudioSpec OutputAudioSpec;
     OutputAudioSpec.freq        = 32000;
@@ -152,7 +150,7 @@ int main(int argc, char* argv[])
     OutputAudioSpec.channels    = 2;
     OutputAudioSpec.samples     = 1024;
     OutputAudioSpec.callback    = AudioCallback;
-    int dcbGain = 5;
+    int dcbGain = 0;
 
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("soundfile_1.sf2");

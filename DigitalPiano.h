@@ -36,6 +36,9 @@ struct MidiTimer {
     int TPQ                  = 0;
     float qNotePerSec        = 1.5f;
     float duration           = 0.f;
+    //std::string title        = "";
+    std::string fileName     = "";
+    bool isPlaying           = false;
     std::mutex midiLock;
     void tick() {
         this->finish = std::chrono::high_resolution_clock::now();
@@ -74,27 +77,7 @@ public:
         return true;
     }
     bool OnUserUpdate(float felaspedTime) override {
-        
-        if (GetKey(olc::Key::LEFT).bPressed) {
-            midiTimer.midiLock.lock();
-            midiTimer.flag = 1;
-            SeekRoutine(-1, 1000.f);
-            //midiTimer.flag = 0;
-            midiTimer.midiLock.unlock();
-        }else if (GetKey(olc::Key::RIGHT).bPressed) {
-            midiTimer.midiLock.lock();
-            midiTimer.flag = 2;
-            SeekRoutine(1, 1000.f);
-            //midiTimer.flag = 0;
-            midiTimer.midiLock.unlock();
-        }
-
-        if (GetKey(olc::Key::UP).bPressed) {
-            midiTimer.speed = midiTimer.speed + .1;
-        }
-        if (GetKey(olc::Key::DOWN).bPressed) {
-            midiTimer.speed = midiTimer.speed - .1;
-        }
+        keyListeners();
         Clear(olc::Pixel(40, 40, 40));
         drawFrame(felaspedTime);
         drawData();
@@ -102,6 +85,7 @@ public:
         return true;
     }
     bool OnUserDestroy() override{
+        midiTimer.flag = -1;
         return true;
     }
     void connectMapper(MAPPER* newMapper) {
@@ -113,9 +97,160 @@ public:
         keyMapper->pedal = false;
     }
 private:
+    void keyListeners() {
+        if (GetKey(olc::Key::LEFT).bPressed) {
+            midiTimer.midiLock.lock();
+            midiTimer.flag = 1;
+            SeekRoutine(-1, 15000.f);
+            //midiTimer.flag = 0;
+            midiTimer.midiLock.unlock();
+        }
+        else if (GetKey(olc::Key::RIGHT).bPressed) {
+            midiTimer.midiLock.lock();
+            midiTimer.flag = 2;
+            SeekRoutine(1, 15000.f);
+            //midiTimer.flag = 0;
+            midiTimer.midiLock.unlock();
+        }
+
+        if (GetKey(olc::Key::UP).bPressed) {
+            midiTimer.speed = midiTimer.speed + .1;
+        }
+        if (GetKey(olc::Key::DOWN).bPressed) {
+            midiTimer.speed = midiTimer.speed - .1;
+        }
+
+        if (!midiTimer.isPlaying) {
+            if (GetKey(olc::A).bPressed) {
+                midiTimer.fileName += "A";
+            }
+            if (GetKey(olc::B).bPressed) {
+                midiTimer.fileName += "B";
+            }
+            if (GetKey(olc::C).bPressed) {
+                midiTimer.fileName += "C";
+            }
+            if (GetKey(olc::D).bPressed) {
+                midiTimer.fileName += "D";
+            }
+            if (GetKey(olc::E).bPressed) {
+                midiTimer.fileName += "E";
+            }
+            if (GetKey(olc::F).bPressed) {
+                midiTimer.fileName += "F";
+            }
+            if (GetKey(olc::G).bPressed) {
+                midiTimer.fileName += "G";
+            }
+            if (GetKey(olc::H).bPressed) {
+                midiTimer.fileName += "H";
+            }
+            if (GetKey(olc::I).bPressed) {
+                midiTimer.fileName += "I";
+            }
+            if (GetKey(olc::J).bPressed) {
+                midiTimer.fileName += "J";
+            }
+            if (GetKey(olc::K).bPressed) {
+                midiTimer.fileName += "K";
+            }
+            if (GetKey(olc::L).bPressed) {
+                midiTimer.fileName += "L";
+            }
+            if (GetKey(olc::M).bPressed) {
+                midiTimer.fileName += "M";
+            }
+            if (GetKey(olc::N).bPressed) {
+                midiTimer.fileName += "N";
+            }
+            if (GetKey(olc::O).bPressed) {
+                midiTimer.fileName += "O";
+            }
+            if (GetKey(olc::P).bPressed) {
+                midiTimer.fileName += "P";
+            }
+            if (GetKey(olc::Q).bPressed) {
+                midiTimer.fileName += "Q";
+            }
+            if (GetKey(olc::R).bPressed) {
+                midiTimer.fileName += "R";
+            }
+            if (GetKey(olc::S).bPressed) {
+                midiTimer.fileName += "S";
+            }
+            if (GetKey(olc::T).bPressed) {
+                midiTimer.fileName += "T";
+            }
+            if (GetKey(olc::U).bPressed) {
+                midiTimer.fileName += "U";
+            }
+            if (GetKey(olc::V).bPressed) {
+                midiTimer.fileName += "V";
+            }
+            if (GetKey(olc::W).bPressed) {
+                midiTimer.fileName += "W";
+            }
+            if (GetKey(olc::X).bPressed) {
+                midiTimer.fileName += "X";
+            }
+            if (GetKey(olc::Y).bPressed) {
+                midiTimer.fileName += "Y";
+            }
+            if (GetKey(olc::Z).bPressed) {
+                midiTimer.fileName += "Z";
+            }
+
+            if (GetKey(olc::K0).bPressed) {
+                midiTimer.fileName += "0";
+            }
+            if (GetKey(olc::K1).bPressed) {
+                midiTimer.fileName += "1";
+            }
+            if (GetKey(olc::K2).bPressed) {
+                midiTimer.fileName += "2";
+            }
+            if (GetKey(olc::K3).bPressed) {
+                midiTimer.fileName += "3";
+            }
+            if (GetKey(olc::K4).bPressed) {
+                midiTimer.fileName += "4";
+            }
+            if (GetKey(olc::K5).bPressed) {
+                midiTimer.fileName += "5";
+            }
+            if (GetKey(olc::K6).bPressed) {
+                midiTimer.fileName += "6";
+            }
+            if (GetKey(olc::K7).bPressed) {
+                midiTimer.fileName += "7";
+            }
+            if (GetKey(olc::K8).bPressed) {
+                midiTimer.fileName += "8";
+            }
+            if (GetKey(olc::K9).bPressed) {
+                midiTimer.fileName += "9";
+            }
+
+            if (GetKey(olc::PERIOD).bPressed) {
+                midiTimer.fileName += ".";
+            }
+            if (GetKey(olc::NP_SUB).bPressed) {
+                midiTimer.fileName += "-";
+            }
+            if (GetKey(olc::BACK).bPressed) {
+                if (midiTimer.fileName.size() > 0) midiTimer.fileName.erase(midiTimer.fileName.size() - 1);
+            }
+            if (GetKey(olc::ENTER).bPressed) {
+                midiTimer.isPlaying = true;
+            }
+        }
+    }
     void drawData() {
-        DrawString(10, 10, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE);
-        DrawString(10, 20, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
+        DrawString(10, 15, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE);
+        DrawString(10, 30, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
+        DrawString(10, 45, "Enter in name of midi file : " + midiTimer.fileName, olc::RED, 1.5);
+        DrawString(10, 60, "Options : clairedelune.mid | cianwood.mid | arab2.mid ", olc::YELLOW, 1.5);
+        DrawString(10, 75, "blackkeys.mid | pokeCredits.mid | theEnd.mid", olc::YELLOW, 1.5);
     }
     void SeekRoutine(int direction, float timeOffset) {
         if (direction == -1) {
@@ -144,7 +279,6 @@ private:
         keyMapper->threadLock.unlock();
     }
 
-private:
     olc::Pixel getColor(bool isWhite, int velocity, std::string & note) {
         if (isWhite) {
             if (velocity == 0) {
@@ -167,7 +301,7 @@ private:
     olc::Pixel getDrawingColor(bool isWhite, std::string & note) {
         vector3f darkMask(.8, .8, .8);
         if (!isWhite) {
-            darkMask.setAll(.4);
+            darkMask.setAll(.6);
         }
         vector3i color = colorMap[note];
         color = color * darkMask;
