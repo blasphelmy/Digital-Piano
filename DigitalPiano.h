@@ -246,11 +246,11 @@ private:
         }
     }
     void drawData() {
-        DrawString(10, 15, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE);
-        DrawString(10, 30, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
-        DrawString(10, 45, "Enter in name of midi file : " + midiTimer.fileName, olc::RED, 1.5);
-        DrawString(10, 60, "Options : clairedelune.mid | cianwood.mid | arab2.mid ", olc::YELLOW, 1.5);
-        DrawString(10, 75, "blackkeys.mid | pokeCredits.mid | theEnd.mid", olc::YELLOW, 1.5);
+        DrawString(10, 20, "Enter in name of midi file : " + midiTimer.fileName, olc::RED, 2);
+        DrawString(10, 45, "Options : clairedelune.mid | cianwood.mid | arab2.mid ", olc::YELLOW, 2);
+        DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid", olc::YELLOW, 2);
+        DrawString(10, 95, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, 2);
+        DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 2);
     }
     void SeekRoutine(int direction, float timeOffset) {
         if (direction == -1) {

@@ -148,7 +148,7 @@ int main()
     OutputAudioSpec.freq        = 32000;
     OutputAudioSpec.format      = AUDIO_S16;
     OutputAudioSpec.channels    = 2;
-    OutputAudioSpec.samples     = 1024;
+    OutputAudioSpec.samples     = 2048;
     OutputAudioSpec.callback    = AudioCallback;
     int dcbGain = 0;
 
