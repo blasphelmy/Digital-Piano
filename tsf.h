@@ -90,7 +90,7 @@ TSFDEF tsf* tsf_copy(tsf* f);
 // Free the memory related to this tsf instance
 TSFDEF void tsf_close(tsf* f);
 
-// Stop all playing notes immediately and reset all channel parameters
+// Stop all playing notes immediatly and reset all channel parameters
 TSFDEF void tsf_reset(tsf* f);
 
 // Returns the preset index from a bank and preset number, or -1 if it does not exist in the loaded SoundFont
@@ -218,7 +218,7 @@ TSFDEF int tsf_channel_set_tuning(tsf* f, int channel, float tuning);
 TSFDEF int tsf_channel_note_on(tsf* f, int channel, int key, float vel);
 TSFDEF void tsf_channel_note_off(tsf* f, int channel, int key);
 TSFDEF void tsf_channel_note_off_all(tsf* f, int channel); //end with sustain and release
-TSFDEF void tsf_channel_sounds_off_all(tsf* f, int channel); //end immediately
+TSFDEF void tsf_channel_sounds_off_all(tsf* f, int channel); //end immediatly
 
 // Apply a MIDI control change to the channel (not all controllers are supported!)
 //    (tsf_channel_midi_control returns 0 on allocation failure of new channel, otherwise 1)
@@ -874,6 +874,11 @@ extern "C" {
 		return 1;
 	}
 
+	static int tsf_voice_envelope_release_samples(
+		struct tsf_voice_envelope* e, float outSampleRate) {
+		return (int)((e->parameters.release <= 0 ? TSF_FASTRELEASETIME : e->parameters.release) * outSampleRate);
+	}
+
 	static void tsf_voice_envelope_nextsegment(struct tsf_voice_envelope* e, short active_segment, float outSampleRate)
 	{
 		switch (active_segment)
@@ -956,7 +961,7 @@ extern "C" {
 			return;
 		case TSF_SEGMENT_SUSTAIN:
 			e->segment = TSF_SEGMENT_RELEASE;
-			e->samplesUntilNextSegment = (int)((e->parameters.release <= 0 ? TSF_FASTRELEASETIME : e->parameters.release) * outSampleRate);
+			e->samplesUntilNextSegment = tsf_voice_envelope_release_samples(e, outSampleRate);
 			if (e->isAmpEnv)
 			{
 				// I don't truly understand this; just following what LinuxSampler does.
@@ -1046,7 +1051,7 @@ extern "C" {
 
 	static void tsf_voice_end(tsf* f, struct tsf_voice* v)
 	{
-		// if maxVoiceNum is set, assume that voice rendering and note queuing are on separate threads
+		// if maxVoiceNum is set, assume that voice rendering and note queuing are on sparate threads
 		// so to minimize the chance that voice rendering would advance the segment at the same time
 		// we just do it twice here and hope that it sticks
 		int repeats = (f->maxVoiceNum ? 2 : 1);
@@ -1064,7 +1069,7 @@ extern "C" {
 
 	static void tsf_voice_endquick(tsf* f, struct tsf_voice* v)
 	{
-		// if maxVoiceNum is set, assume that voice rendering and note queuing are on separate threads
+		// if maxVoiceNum is set, assume that voice rendering and note queuing are on sparate threads
 		// so to minimize the chance that voice rendering would advance the segment at the same time
 		// we just do it twice here and hope that it sticks
 		int repeats = (f->maxVoiceNum ? 2 : 1);
@@ -1213,7 +1218,7 @@ extern "C" {
 				}
 				break;
 			}
-
+			
 			if (tmpSourceSamplePosition >= tmpSampleEndDbl || v->ampenv.segment == TSF_SEGMENT_DONE)
 			{
 				tsf_voice_kill(v);
@@ -1440,15 +1445,41 @@ extern "C" {
 				struct tsf_voice* newVoices;
 				if (f->maxVoiceNum)
 				{
-					// voices have been pre-allocated and limited to a maximum, unable to start playing this voice
-					continue;
+					// Voices have been pre-allocated and limited to a maximum.
+					// Try to kill a voice off in its release envelope:
+					int bestKillReleaseSamplePos = 0;
+					struct tsf_voice* bestKill = NULL;
+					v = f->voices;
+					for (; v != vEnd; v++) {
+						if (v->ampenv.segment == TSF_SEGMENT_RELEASE) {
+							int releaseSamplesDone = tsf_voice_envelope_release_samples(
+								&v->ampenv, f->outSampleRate
+							) - v->ampenv.samplesUntilNextSegment;
+							if (bestKill != NULL && releaseSamplesDone <= bestKillReleaseSamplePos)
+							{
+								continue;
+							}
+							// We're looking for the voice furthest into its release:
+							bestKill = v;
+							bestKillReleaseSamplePos = releaseSamplesDone;
+						}
+					}
+					if (bestKill) {
+						tsf_voice_kill(bestKill);
+						voice = bestKill;
+					}
+					if (!voice)
+						continue;
 				}
-				f->voiceNum += 4;
-				newVoices = (struct tsf_voice*)TSF_REALLOC(f->voices, f->voiceNum * sizeof(struct tsf_voice));
-				if (!newVoices) return 0;
-				f->voices = newVoices;
-				voice = &f->voices[f->voiceNum - 4];
-				voice[1].playingPreset = voice[2].playingPreset = voice[3].playingPreset = -1;
+				else {
+					// Allocate more voices so we don't need to kill one off.
+					f->voiceNum += 4;
+					newVoices = (struct tsf_voice*)TSF_REALLOC(f->voices, f->voiceNum * sizeof(struct tsf_voice));
+					if (!newVoices) return 0;
+					f->voices = newVoices;
+					voice = &f->voices[f->voiceNum - 4];
+					voice[1].playingPreset = voice[2].playingPreset = voice[3].playingPreset = -1;
+				}
 			}
 
 			voice->region = region;

@@ -23,14 +23,6 @@
 
 class MAPPER {
 public:
-    std::array<key, 88>             keyMap;
-    std::map<int, int>              keyIdMap;
-    std::map<int, FlyingNotes* >    activelyDrawing;
-    std::queue<FlyingNotes>         onScreenNoteElements;
-    std::mutex                      threadLock;
-    tsf* soundFile = nullptr;
-    bool pedal = false;
-
     struct activeNotes {
         activeNotes(int index, int keyId) {
             this->index = index;
@@ -39,25 +31,14 @@ public:
         int index;
         int keyId;
     };
-
-    std::queue<activeNotes> activeNotesPool;
-private:
-    void flushActiveNotes() {
-        std::queue<activeNotes> newqueue;
-        while (!activeNotesPool.empty()) {
-
-            activeNotes note = activeNotesPool.front();
-            activeNotesPool.pop();
-
-            if (keyMap[keyIdMap[note.keyId]].velocity > 0) {
-                newqueue.push(note);
-            }
-            else {
-                tsf_note_off(soundFile, 0, note.keyId + 21);
-            }
-        }
-        activeNotesPool = newqueue;
-    }
+    std::array<key, 88>             keyMap;
+    std::map<int, int>              keyIdMap;
+    std::map<int, FlyingNotes* >    activelyDrawing;
+    std::queue<FlyingNotes>         onScreenNoteElements;
+    std::queue<activeNotes>         activeNotesPool;
+    tsf*                            soundFile = nullptr;
+    bool                            pedal = false;
+    std::mutex                      threadLock;
 
 public:
     MAPPER() {
@@ -150,12 +131,29 @@ public:
 
     }
 
+private:
+    void flushActiveNotes() {
+        std::queue<activeNotes> newqueue;
+        while (!activeNotesPool.empty()) {
+
+            activeNotes note = activeNotesPool.front();
+            activeNotesPool.pop();
+
+            if (keyMap[keyIdMap[note.keyId]].velocity > 0) {
+                newqueue.push(note);
+            }
+            else {
+                tsf_note_off(soundFile, 0, note.keyId + 21);
+            }
+        }
+        activeNotesPool = newqueue;
+    }
 public:
     void setKeyState(int cat, int keyId, int velocity) {
         threadLock.lock();
         if (cat == 144 || cat == 128) {
             if (velocity != 0) {
-                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity) / 100.f);
+                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 100.f));
                 activeNotesPool.push(activeNotes(0, keyId));
                 key thisKey = keyMap[keyIdMap[keyId]];
                 FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
@@ -178,14 +176,16 @@ public:
             keyMap[keyIdMap[keyId]].velocity = velocity;
         }
         else if (cat == 176) {
+            std::cout << "pedal switched" << std::endl;
             switch (pedal) {
-            case true:
-                pedal = false;
-                flushActiveNotes();
-                break;
-            case false:
-                pedal = true;
-                break;
+                case true:
+                    pedal = false;
+                    flushActiveNotes();
+                    //tsf_note_off_all(soundFile);
+                    break;
+                case false:
+                    pedal = true;
+                    break;
             }
         }
         threadLock.unlock();

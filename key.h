@@ -27,7 +27,7 @@ public:
     std::string name;
     bool        isWhite;
     //bool active = false;
-    int velocity = 0;
+    int         velocity = 0;
 public:
     explicit key() {
         this->isWhite = true;

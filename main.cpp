@@ -58,6 +58,7 @@ int inputThread(MAPPER * keyMapper) {
             //144 keys 176 pedals
             keyMapper->setKeyState((int)message[0],(int)message[1] - 21, (int)message[2]);
         }   
+        //Sleep(1);
     }
     // Clean up
 cleanup:
@@ -71,7 +72,7 @@ static void AudioCallback(void* data, Uint8* stream, int len)
 }
 smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     smf::MidiFile newMidiFile(fileName);
-    newMidiFile.doTimeAnalysis();
+    //newMidiFile.doTimeAnalysis();
     //newMidiFile.linkNotePairs();
     newMidiFile.joinTracks(); // we only care about 1 track right now
 
@@ -90,7 +91,6 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     }
     midiTimer.duration = midifile.getFileDurationInSeconds();
     midiTimer.fileName = midifile.getFilename();
-    //if (midifile[0].size() > 0) std::cout << "Playing...." << std::endl;
     digitalPiano->playSignal();
     midiTimer.start = std::chrono::high_resolution_clock::now();
     while (midiTimer.index < midifile[0].size() && !done && midiTimer.flag != -1) {
@@ -121,14 +121,17 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
                 break;
             }
         }
-        while (midiTimer.index < midifile[0].size() && midiTimer.flag == 0 && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) {
+        while (midiTimer.index < midifile[0].size() 
+                && midiTimer.flag == 0 
+                && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) {
             event = midifile[0][midiTimer.index];
             keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
         }
-        Sleep(5);
+        Sleep(1);
     }
     midiTimer.isPlaying = false;
+    keyMapper->pedal = false;
     return action;
 }
 int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
@@ -140,15 +143,20 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
         Sleep(10);
     } while (digitalPiano->midiTimer.flag != -1);
     done = true;
+    return 0;
+}
+
+int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
+
 }
 
 int main()
 {
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq        = 32000;
+    OutputAudioSpec.freq        = 44100;
     OutputAudioSpec.format      = AUDIO_S16;
     OutputAudioSpec.channels    = 2;
-    OutputAudioSpec.samples     = 2048;
+    OutputAudioSpec.samples     = 1024;
     OutputAudioSpec.callback    = AudioCallback;
     int dcbGain = 0;
 
@@ -159,12 +167,14 @@ int main()
     SDL_PauseAudio(0);
 
     MAPPER* keyMapper = new MAPPER();
-    DigitalPiano* app = new DigitalPiano();
+    DigitalPiano * app = new DigitalPiano();
+    NoteAnalyzer* analyzer = new NoteAnalyzer(app);
     keyMapper -> soundFile = soundFile;
 
     std::thread guiThreadObject(guiRenderThread, keyMapper, app);
     std::thread inputThreadObject(inputThread, keyMapper);
     std::thread loadSongInputThread(playSongInputThread, keyMapper, app);
+    
 
     inputThreadObject.join();
     guiThreadObject.join();
@@ -173,5 +183,6 @@ int main()
     delete keyMapper;
     delete soundFile;
     delete app;
+    delete analyzer;
     return 0;
 }

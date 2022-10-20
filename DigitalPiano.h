@@ -20,18 +20,14 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
-struct horizontalLine {
-    float y     = 880;
-    float left  = 0.f;
-    float right = 1920.f;
-};
+
 struct MidiTimer {
     std::chrono::high_resolution_clock::time_point  start;
     std::chrono::high_resolution_clock::time_point  finish;
     int flag                 = 0;
     int index                = 0;
     long long timeSinceStart = 0.0;
-    double speed             = 1.0;
+    float speed              = 1.0;
     double ticks             = 0;
     int TPQ                  = 0;
     float qNotePerSec        = 1.5f;
@@ -42,7 +38,8 @@ struct MidiTimer {
     std::mutex midiLock;
     void tick() {
         this->finish = std::chrono::high_resolution_clock::now();
-        this->timeSinceStart = (this->timeSinceStart + (std::chrono::duration_cast<std::chrono::milliseconds>(this->finish - this->start).count() * this->speed));
+        this->timeSinceStart = (this->timeSinceStart + 
+                                (std::chrono::duration_cast<std::chrono::milliseconds>(this->finish - this->start).count() * this->speed));
         this->start = std::chrono::high_resolution_clock::now();
         if (speed > 3) speed = 3;
         if (speed < 0) speed = 0;
@@ -50,6 +47,12 @@ struct MidiTimer {
 };
 
 class DigitalPiano : public olc::PixelGameEngine {
+private : 
+    struct horizontalLine {
+        float y = 880;
+        float left = 0.f;
+        float right = 1920.f;
+    };
 public:
     DigitalPiano() {
         sAppName = "Digital Piano";
@@ -93,7 +96,6 @@ public:
     }
     void playSignal() {
         timeAccumalator = 0.f;
-        //first two variable is garbage. remember to fix
         keyMapper->pedal = false;
     }
 private:
@@ -102,25 +104,21 @@ private:
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
             SeekRoutine(-1, 15000.f);
-            //midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
         }
         else if (GetKey(olc::Key::RIGHT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 2;
             SeekRoutine(1, 15000.f);
-            //midiTimer.flag = 0;
             midiTimer.midiLock.unlock();
         }
-
         if (GetKey(olc::Key::UP).bPressed) {
             midiTimer.speed = midiTimer.speed + .1;
         }
         if (GetKey(olc::Key::DOWN).bPressed) {
             midiTimer.speed = midiTimer.speed - .1;
         }
-
-        if (!midiTimer.isPlaying) {
+        if (!midiTimer.isPlaying && GetKey(olc::SHIFT).bHeld) {
             if (GetKey(olc::A).bPressed) {
                 midiTimer.fileName += "A";
             }
@@ -246,7 +244,7 @@ private:
         }
     }
     void drawData() {
-        DrawString(10, 20, "Enter in name of midi file : " + midiTimer.fileName, olc::RED, 2);
+        DrawString(10, 20, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, 2);
         DrawString(10, 45, "Options : clairedelune.mid | cianwood.mid | arab2.mid ", olc::YELLOW, 2);
         DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid", olc::YELLOW, 2);
         DrawString(10, 95, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, 2);
@@ -275,6 +273,7 @@ private:
                 keyMapper->activelyDrawing.erase(i);
             }
         }
+        keyMapper->pedal = false;
         keyMapper->onScreenNoteElements = reset;
         keyMapper->threadLock.unlock();
     }
@@ -379,4 +378,16 @@ private:
         }
         keyMapper->threadLock.unlock();
     }
+};
+class NoteAnalyzer {
+public:
+    NoteAnalyzer(DigitalPiano* app) {
+        this->piano = app;
+    }
+    ~NoteAnalyzer() {
+
+    }
+public:
+    DigitalPiano* piano;
+
 };
