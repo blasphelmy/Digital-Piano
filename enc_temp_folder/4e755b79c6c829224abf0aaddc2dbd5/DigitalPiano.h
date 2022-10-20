@@ -250,8 +250,8 @@ private:
         DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid", olc::YELLOW, 2);
         DrawString(10, 95, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, 2);
         DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 2);
-        //DrawString(10, 145, "Active voices : " + std::to_string(midiTimer.numVoices), olc::WHITE, 2);
-        //DrawString(10, 170, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, 2);
+        DrawString(10, 145, "Active voices : " + std::to_string(midiTimer.numVoices), olc::WHITE, 2);
+        DrawString(10, 170, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, 2);
     }
     void SeekRoutine(int direction, float timeOffset) {
         if (direction == -1) {

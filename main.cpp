@@ -128,13 +128,16 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
             midiTimer.numVoices++;
-            if (midiTimer.numVoices > 256) {
-                tsf_note_off_all(soundFile);
+            if (midiTimer.numVoices > 128) {
+                digitalPiano->keyMapper->flushActiveNotes();
+                //tsf_note_off_all(soundFile);
                 midiTimer.numVoices = 0;
             }
         }
-        Sleep(5);
+        Sleep(3);
     }
+    tsf_note_off_all(soundFile);
+    midiTimer.numVoices = 0;
     midiTimer.isPlaying = false;
     keyMapper->pedal = false;
     return action;

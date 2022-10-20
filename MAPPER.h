@@ -130,8 +130,7 @@ public:
     ~MAPPER() {
 
     }
-
-private:
+public:
     void flushActiveNotes() {
         std::queue<activeNotes> newqueue;
         while (!activeNotesPool.empty()) {
@@ -148,7 +147,6 @@ private:
         }
         activeNotesPool = newqueue;
     }
-public:
     void setKeyState(int cat, int keyId, int velocity) {
         threadLock.lock();
         if (cat == 144 || cat == 128) {
