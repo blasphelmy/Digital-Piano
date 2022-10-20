@@ -130,7 +130,11 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             midiTimer.numVoices++;
             if (midiTimer.numVoices > 128) {
                 digitalPiano->keyMapper->flushActiveNotes();
-                //tsf_note_off_all(soundFile);
+                midiTimer.numVoices = 0;
+            }
+            if (tsf_active_voice_count(soundFile) > 200) {
+                tsf_note_off_all(soundFile);
+                digitalPiano->keyMapper->flushActiveNotes();
                 midiTimer.numVoices = 0;
             }
         }
