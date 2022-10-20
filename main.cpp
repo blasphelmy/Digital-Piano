@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
-#include <filesystem>
+
 
 bool done;
 tsf* soundFile;
@@ -127,8 +127,13 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             event = midifile[0][midiTimer.index];
             keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
+            midiTimer.numVoices++;
+            if (midiTimer.numVoices > 256) {
+                tsf_note_off_all(soundFile);
+                midiTimer.numVoices = 0;
+            }
         }
-        Sleep(1);
+        Sleep(5);
     }
     midiTimer.isPlaying = false;
     keyMapper->pedal = false;
@@ -163,6 +168,7 @@ int main()
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("soundfile_1.sf2");
     tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
+    //tsf_set_max_voices(soundFile, 128);
     SDL_OpenAudio(&OutputAudioSpec, NULL);
     SDL_PauseAudio(0);
 
@@ -175,9 +181,8 @@ int main()
     std::thread inputThreadObject(inputThread, keyMapper);
     std::thread loadSongInputThread(playSongInputThread, keyMapper, app);
     
-
-    inputThreadObject.join();
     guiThreadObject.join();
+    inputThreadObject.join();
     loadSongInputThread.join();
 
     delete keyMapper;

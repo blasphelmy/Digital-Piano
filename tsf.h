@@ -36,7 +36,6 @@
 
 #ifndef TSF_INCLUDE_TSF_INL
 #define TSF_INCLUDE_TSF_INL
-
 #ifdef __cplusplus
 extern "C" {
 #  define CPP_DEFAULT0 = 0

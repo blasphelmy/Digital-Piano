@@ -35,6 +35,7 @@ struct MidiTimer {
     //std::string title        = "";
     std::string fileName     = "";
     bool isPlaying           = false;
+    int numVoices            = 0;
     std::mutex midiLock;
     void tick() {
         this->finish = std::chrono::high_resolution_clock::now();

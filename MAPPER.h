@@ -153,6 +153,7 @@ public:
         threadLock.lock();
         if (cat == 144 || cat == 128) {
             if (velocity != 0) {
+                //while (tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 100.f)) == 0)
                 tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 100.f));
                 activeNotesPool.push(activeNotes(0, keyId));
                 key thisKey = keyMap[keyIdMap[keyId]];
@@ -175,8 +176,8 @@ public:
             }
             keyMap[keyIdMap[keyId]].velocity = velocity;
         }
-        else if (cat == 176) {
-            std::cout << "pedal switched" << std::endl;
+        else {
+            //std::cout << "pedal switched" << std::endl;
             switch (pedal) {
                 case true:
                     pedal = false;
