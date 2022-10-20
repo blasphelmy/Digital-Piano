@@ -72,8 +72,8 @@ static void AudioCallback(void* data, Uint8* stream, int len)
 }
 smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     smf::MidiFile newMidiFile(fileName);
-    //newMidiFile.doTimeAnalysis();
-    //newMidiFile.linkNotePairs();
+    newMidiFile.doTimeAnalysis();
+    newMidiFile.linkNotePairs();
     newMidiFile.joinTracks(); // we only care about 1 track right now
 
     return newMidiFile;
@@ -93,6 +93,10 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     midiTimer.fileName = midifile.getFilename();
     digitalPiano->playSignal();
     midiTimer.start = std::chrono::high_resolution_clock::now();
+    //for (int i = 0; i < 100; i++) {
+    //    smf::MidiEvent event = midifile[0][i];
+    //    std::cout << std::dec << (int)event[0] << " " << (int)event[1] << " " << (int)event[2] << std::endl;
+    //}
     while (midiTimer.index < midifile[0].size() && !done && midiTimer.flag != -1) {
         action = true;
         midiTimer.tick();
@@ -123,22 +127,22 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
         }
         while (midiTimer.index < midifile[0].size() 
                 && midiTimer.flag == 0 
-                && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) {
+                && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) 
+        {
             event = midifile[0][midiTimer.index];
-            keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
+            if((int)event[0] == 176 || (int)event[0] == 144 || (int)event[0] == 128)keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
             midiTimer.numVoices++;
-            if (midiTimer.numVoices > 128) {
+            if (midiTimer.numVoices > 128 || tsf_active_voice_count(soundFile) > 200) {
                 digitalPiano->keyMapper->flushActiveNotes();
                 midiTimer.numVoices = 0;
             }
-            if (tsf_active_voice_count(soundFile) > 200) {
+            if (tsf_active_voice_count(soundFile) > 256) {
                 tsf_note_off_all(soundFile);
-                digitalPiano->keyMapper->flushActiveNotes();
-                midiTimer.numVoices = 0;
+                //midiTimer.numVoices = 0;
             }
         }
-        Sleep(3);
+        Sleep(2);
     }
     tsf_note_off_all(soundFile);
     midiTimer.numVoices = 0;
