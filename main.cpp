@@ -29,9 +29,9 @@ static void finish(int ignore) { done = true; }
 int memoryManagement(DigitalPiano* digitalPiano) {
     MAPPER* keyMapper = digitalPiano->keyMapper;
     while (digitalPiano->midiTimer.flag != -1) {
-        while (keyMapper->activeNotesPool.size() > 24) {
+        while (keyMapper->activeNotesPool.size() > 12) {
             keyMapper->threadLock.lock();
-            while (keyMapper->activeNotesPool.size() > 16) {
+            while (keyMapper->activeNotesPool.size() > 6) {
                 activeNotes note = keyMapper->activeNotesPool.front();
                 keyMapper->activeNotesPool.pop();
                 tsf_note_off(soundFile, 0, note.keyId + 21);
@@ -110,10 +110,6 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     digitalPiano->playSignal();
     keyMapper->pedal = true;
     midiTimer.start = std::chrono::high_resolution_clock::now();
-    //for (int i = 0; i < 100; i++) {
-    //    smf::MidiEvent event = midifile[0][i];
-    //    std::cout << std::dec << (int)event[0] << " " << (int)event[1] << " " << (int)event[2] << std::endl;
-    //}
     while (midiTimer.index < midifile[0].size() && !done && midiTimer.flag != -1) {
         action = true;
         midiTimer.tick();
@@ -151,11 +147,12 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             midiTimer.index++;
             midiTimer.numVoices++;
         }
-        Sleep(2);
+        Sleep(1);
     }
     tsf_note_off_all(soundFile);
     midiTimer.numVoices = 0;
     midiTimer.isPlaying = false;
+    keyMapper->flushActiveNotes();
     return action;
 }
 int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
@@ -202,9 +199,9 @@ int main()
     std::thread memoryManagementThread(memoryManagement, app);
     
     guiThreadObject.join();
-    memoryManagementThread.join();
     inputThreadObject.join();
     loadSongInputThread.join();
+    memoryManagementThread.join();
 
     delete keyMapper;
     delete soundFile;
