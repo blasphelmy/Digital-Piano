@@ -26,6 +26,22 @@ bool done;
 tsf* soundFile;
 static void finish(int ignore) { done = true; }
 
+int memoryManagement(DigitalPiano* digitalPiano) {
+    MAPPER* keyMapper = digitalPiano->keyMapper;
+    while (digitalPiano->midiTimer.flag != -1) {
+        while (keyMapper->activeNotesPool.size() > 24) {
+            keyMapper->threadLock.lock();
+            while (keyMapper->activeNotesPool.size() > 16) {
+                activeNotes note = keyMapper->activeNotesPool.front();
+                keyMapper->activeNotesPool.pop();
+                tsf_note_off(soundFile, 0, note.keyId + 21);
+            }
+            keyMapper->threadLock.unlock();
+        }
+    }
+    return 0;
+}
+
 int guiRenderThread(MAPPER * keyMapper, DigitalPiano * digitalPiano) {
     digitalPiano->connectMapper(keyMapper);
     if (digitalPiano->Construct(1920, 1080, 1, 1))
@@ -134,13 +150,6 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             if(/*(int)event[0] == 176 || */(int)event[0] == 144 || (int)event[0] == 128)keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
             midiTimer.numVoices++;
-            while (keyMapper->activeNotesPool.size() > 64) {
-                while (keyMapper->activeNotesPool.size() > 32) {
-                    activeNotes note = keyMapper->activeNotesPool.front();
-                    keyMapper->activeNotesPool.pop();
-                    tsf_note_off(soundFile, 0, note.keyId + 21);
-                }
-            }
         }
         Sleep(2);
     }
@@ -162,7 +171,6 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
 }
 
 int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
-
 }
 
 int main()
@@ -185,20 +193,22 @@ int main()
 
     MAPPER* keyMapper = new MAPPER();
     DigitalPiano * app = new DigitalPiano();
-    NoteAnalyzer* analyzer = new NoteAnalyzer(app);
+    //NoteAnalyzer* analyzer = new NoteAnalyzer(app);
     keyMapper -> soundFile = soundFile;
 
     std::thread guiThreadObject(guiRenderThread, keyMapper, app);
     std::thread inputThreadObject(inputThread, keyMapper);
     std::thread loadSongInputThread(playSongInputThread, keyMapper, app);
+    std::thread memoryManagementThread(memoryManagement, app);
     
     guiThreadObject.join();
+    memoryManagementThread.join();
     inputThreadObject.join();
     loadSongInputThread.join();
 
     delete keyMapper;
     delete soundFile;
     delete app;
-    delete analyzer;
+    //delete analyzer;
     return 0;
 }
