@@ -92,6 +92,7 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     midiTimer.duration = midifile.getFileDurationInSeconds();
     midiTimer.fileName = midifile.getFilename();
     digitalPiano->playSignal();
+    keyMapper->pedal = true;
     midiTimer.start = std::chrono::high_resolution_clock::now();
     //for (int i = 0; i < 100; i++) {
     //    smf::MidiEvent event = midifile[0][i];
@@ -130,16 +131,15 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
                 && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) 
         {
             event = midifile[0][midiTimer.index];
-            if((int)event[0] == 176 || (int)event[0] == 144 || (int)event[0] == 128)keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
+            if(/*(int)event[0] == 176 || */(int)event[0] == 144 || (int)event[0] == 128)keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
             midiTimer.index++;
             midiTimer.numVoices++;
-            if (midiTimer.numVoices > 128 || tsf_active_voice_count(soundFile) > 200) {
-                digitalPiano->keyMapper->flushActiveNotes();
-                midiTimer.numVoices = 0;
-            }
-            if (tsf_active_voice_count(soundFile) > 256) {
-                tsf_note_off_all(soundFile);
-                //midiTimer.numVoices = 0;
+            while (keyMapper->activeNotesPool.size() > 64) {
+                while (keyMapper->activeNotesPool.size() > 32) {
+                    activeNotes note = keyMapper->activeNotesPool.front();
+                    keyMapper->activeNotesPool.pop();
+                    tsf_note_off(soundFile, 0, note.keyId + 21);
+                }
             }
         }
         Sleep(2);
@@ -147,7 +147,6 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     tsf_note_off_all(soundFile);
     midiTimer.numVoices = 0;
     midiTimer.isPlaying = false;
-    keyMapper->pedal = false;
     return action;
 }
 int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
@@ -169,7 +168,8 @@ int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
 int main()
 {
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq        = 44100;
+    //OutputAudioSpec.freq        = 44100;
+    OutputAudioSpec.freq = 32000;
     OutputAudioSpec.format      = AUDIO_S16;
     OutputAudioSpec.channels    = 2;
     OutputAudioSpec.samples     = 1024;

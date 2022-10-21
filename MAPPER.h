@@ -21,16 +21,17 @@
 #include <queue>
 #include <mutex>
 
+struct activeNotes {
+    activeNotes(int index, int keyId) {
+        this->index = index;
+        this->keyId = keyId;
+    }
+    int index;
+    int keyId;
+};
+
 class MAPPER {
 public:
-    struct activeNotes {
-        activeNotes(int index, int keyId) {
-            this->index = index;
-            this->keyId = keyId;
-        }
-        int index;
-        int keyId;
-    };
     std::array<key, 88>             keyMap;
     std::map<int, int>              keyIdMap;
     std::map<int, FlyingNotes* >    activelyDrawing;
@@ -152,7 +153,7 @@ public:
         if (cat == 144 || cat == 128) {
             if (velocity != 0) {
                 //while (tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 100.f)) == 0)
-                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 100.f));
+                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
                 activeNotesPool.push(activeNotes(0, keyId));
                 key thisKey = keyMap[keyIdMap[keyId]];
                 FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
