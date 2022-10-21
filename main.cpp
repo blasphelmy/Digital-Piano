@@ -31,11 +31,9 @@ int memoryManagement(DigitalPiano* digitalPiano) {
     while (digitalPiano->midiTimer.flag != -1) {
         while (keyMapper->activeNotesPool.size() > 12) {
             keyMapper->threadLock.lock();
-            while (keyMapper->activeNotesPool.size() > 6) {
-                activeNotes note = keyMapper->activeNotesPool.front();
-                keyMapper->activeNotesPool.pop();
-                tsf_note_off(soundFile, 0, note.keyId + 21);
-            }
+            activeNotes note = keyMapper->activeNotesPool.front();
+            keyMapper->activeNotesPool.pop();
+            tsf_note_off(soundFile, 0, note.keyId + 21);
             keyMapper->threadLock.unlock();
         }
     }
@@ -184,6 +182,7 @@ int main()
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("soundfile_1.sf2");
     tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
+    tsf_set_max_voices(soundFile, 256);
     //tsf_set_max_voices(soundFile, 128);
     SDL_OpenAudio(&OutputAudioSpec, NULL);
     SDL_PauseAudio(0);
