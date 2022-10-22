@@ -78,7 +78,6 @@ class DigitalPiano : public PIXELGAMEENGINEADDONS {
 public:
     DigitalPiano() {
         sAppName = "Digital Piano";
-        std::cout << _WINDOW_H;
     }
     ~DigitalPiano() {
     }
@@ -324,9 +323,7 @@ private:
     }
     olc::Pixel getDrawingColor(bool isWhite, std::string& note) {
         vector3f darkMask(.8, .8, .8);
-        if (!isWhite) {
-            darkMask.setAll(.6);
-        }
+        if (!isWhite) darkMask.setAll(.6);
         vector3i color = colorMap[note];
         color = color * darkMask;
         return olc::Pixel(color.x, color.y, color.z);
@@ -373,6 +370,7 @@ private:
                 drawnKey->size.y += yOffSet;
                 drawnKey->position.y -= yOffSet;
             }
+
             key thisKey = keyMapper->keyMap[i];
 
             if (thisKey.isWhite) {
