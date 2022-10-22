@@ -152,6 +152,7 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     }
     tsf_note_off_all(soundFile);
     midiTimer.isPlaying = false;
+    midiTimer.timeSinceStart = 0.0;
     keyMapper->flushActiveNotes();
     return action;
 }
@@ -202,7 +203,7 @@ void setGlobalVariables() {
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("soundfile_1.sf2");
     tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
-    tsf_set_max_voices(soundFile, 312);
+    tsf_set_max_voices(soundFile, 256);
     SDL_OpenAudio(&OutputAudioSpec, NULL);
     SDL_PauseAudio(0);
 }
