@@ -47,10 +47,34 @@ struct MidiTimer {
     }
 };
 
-class DigitalPiano : public olc::PixelGameEngine {
-private : 
-    struct horizontalLine { float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W;
-    };
+class PIXELGAMEENGINEADDONS : public olc::PixelGameEngine {
+public :
+    struct horizontalLine { float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W; };
+public :
+    void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color) {
+        float radius = size.x / 2;
+        if (size.y < radius * 2) {
+            size.y = radius * 2;
+        }
+        olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
+        innerRect.x -= 1.f;
+        olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
+        FillRect(innerRect_pos - olc::vd2d(2.0, 2.0), innerRect + olc::vd2d(6.0, 6.0), color);
+
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y + 2.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x + 2.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+
+        FillCircle(innerRect_pos, radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y + innerRect.y), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y), radius, color);
+    }
+};
+
+class DigitalPiano : public PIXELGAMEENGINEADDONS {
 public:
     DigitalPiano() {
         sAppName = "Digital Piano";
@@ -307,50 +331,9 @@ private:
         color = color * darkMask;
         return olc::Pixel(color.x, color.y, color.z);
     }
-    void FillRoundedRect(olc::vd2d pos, olc::vd2d size, double radius, olc::Pixel color) {
-        //FillRect(pos, size, olc::WHITE);
-        //PATCH FOR SMALL RECTANGLES... relationship is with radius...
-        radius = size.x / 2;
-        if (size.y < radius * 2) {
-            size.y = radius * 2;
-        }
-        olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
-        olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
-        FillRect(innerRect_pos - olc::vd2d(3.0, 3.0), innerRect + olc::vd2d(6.0, 6.0), color);
-
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
-
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y + 2.0), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x + 2.0, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
-
-        FillCircle(innerRect_pos, radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y + innerRect.y), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y), radius, color);
-    }
-
-    //void FillRoundedRect(olc::vd2d pos, olc::vd2d size, double radius, olc::Pixel color) {
-    //    //FillRect(pos, size, olc::WHITE);
-    //    //PATCH FOR SMALL RECTANGLES... relationship is with radius...
-    //    if (size.y < 24) {
-    //        size.y = 24;
-    //    }
-    //    //size.y -= size.x;
-    //    olc::vd2d rectPOS = pos;
-    //    rectPOS.y += size.x / 2;
-    //    FillRect(rectPOS, size, color);
-    //    
-    //    float _radius = size.x / 2 - .5f;
-    //    olc::vd2d circleOrigin = rectPOS;
-    //    circleOrigin.x += _radius;
-
-    //    FillCircle(circleOrigin, _radius, color);
-    //    circleOrigin.y += size.y;
-    //    FillCircle(circleOrigin, _radius, color);
-    //}
-
     void drawFrame(double timeElasped) {
+        keyMapper->threadLock.lock();
+
         double yOffSet = timeElasped * 100.f;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
@@ -370,13 +353,12 @@ private:
         }
         scrollingLines = newHorizontalLinesQueue;
 
-        keyMapper->threadLock.lock();
         while (!keyMapper->onScreenNoteElements.empty()) {
 
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
 
-            FillRoundedRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), 12.0, getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
+            FillRoundedRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
             onscreenKey.position.y -= yOffSet;
 
             if (onscreenKey.position.y + onscreenKey.size.y + 12.0 > 0)
@@ -387,7 +369,7 @@ private:
             if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
             if (keyMapper->activelyDrawing.count(i) > 0) {
                 key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                FillRoundedRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), 12.0, getDrawingColor(drawnKey->isWhite, drawnKey->name));
+                FillRoundedRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite, drawnKey->name));
                 drawnKey->size.y += yOffSet;
                 drawnKey->position.y -= yOffSet;
             }
@@ -397,7 +379,7 @@ private:
                 FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
             }
             else {
-                FillRoundedRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), 12.0,  getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
+                FillRoundedRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
             }
 
         }
