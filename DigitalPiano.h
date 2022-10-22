@@ -1,4 +1,5 @@
 #pragma once
+#include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
 #include "tsf.h"
 #include "minisdl_audio.h"
@@ -32,42 +33,39 @@ struct MidiTimer {
     int TPQ                  = 0;
     float qNotePerSec        = 1.5f;
     float duration           = 0.f;
-    //std::string title        = "";
     std::string fileName     = "";
     bool isPlaying           = false;
-    int numVoices            = 0;
     std::mutex midiLock;
     void tick() {
-        this->finish = std::chrono::high_resolution_clock::now();
-        this->timeSinceStart = (this->timeSinceStart + 
-                                (std::chrono::duration_cast<std::chrono::milliseconds>(this->finish - this->start).count() * this->speed));
-        this->start = std::chrono::high_resolution_clock::now();
+        Sleep(1);
         if (speed > 3) speed = 3;
         if (speed < 0) speed = 0;
+        this->finish         = std::chrono::high_resolution_clock::now();
+        this->timeSinceStart = (this->timeSinceStart 
+                             + (std::chrono::duration_cast<std::chrono::milliseconds>(this->finish - this->start).count() * this->speed));
+        this->start          = std::chrono::high_resolution_clock::now();
     }
 };
 
 class DigitalPiano : public olc::PixelGameEngine {
 private : 
-    struct horizontalLine {
-        float y = 880;
-        float left = 0.f;
-        float right = 1920.f;
+    struct horizontalLine { float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W;
     };
 public:
     DigitalPiano() {
         sAppName = "Digital Piano";
+        std::cout << _WINDOW_H;
     }
     ~DigitalPiano() {
     }
 public:
-    MAPPER*     keyMapper = nullptr;
+    MAPPER* keyMapper = nullptr;
     MidiTimer   midiTimer;
 private:
     std::unordered_map<std::string, vector3i> colorMap;
     std::queue<horizontalLine> scrollingLines;
     float timeAccumalator = 500.f;
-    float targetBPM       = 1.5f;
+    float targetBPM = 1.5f;
 
 public:
     bool OnUserCreate() override {
@@ -88,7 +86,7 @@ public:
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
-    bool OnUserDestroy() override{
+    bool OnUserDestroy() override {
         midiTimer.flag = -1;
         return true;
     }
@@ -104,13 +102,13 @@ private:
         if (GetKey(olc::Key::LEFT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
-            SeekRoutine(-1, 15000.f);
+            SeekRoutine(-1, targetBPM * 1000.f * 4);
             midiTimer.midiLock.unlock();
         }
         else if (GetKey(olc::Key::RIGHT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 2;
-            SeekRoutine(1, 15000.f);
+            SeekRoutine(1, targetBPM * 1000.f * 4);
             midiTimer.midiLock.unlock();
         }
         if (GetKey(olc::Key::UP).bPressed) {
@@ -246,13 +244,13 @@ private:
     }
     void drawData() {
         int i = 0;
-        DrawString(10, 20, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, 2);
-        DrawString(10, 45, "Options : clairedelune.mid | mozartk545.mid | arab2.mid ", olc::YELLOW, 2);
-        DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid | cianwood.mid", olc::YELLOW, 2);
-        DrawString(10, 95, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, 2);
-        DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 2);
-        DrawString(10, 145, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, 2);
-        DrawString(10, 170, "ActiveNotes Size : " + std::to_string(keyMapper->activeNotesPool.size()), olc::WHITE, 2);
+        DrawString(10, 20, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
+        DrawString(10, 45, "Options : clairedelune.mid | mozartk545.mid | arab2.mid ", olc::YELLOW, _TEXT_SCALE);
+        DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid | cianwood.mid", olc::YELLOW, _TEXT_SCALE);
+        DrawString(10, 95, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
+        DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, _TEXT_SCALE);
+        DrawString(10, 145, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, _TEXT_SCALE);
+        DrawString(10, 170, "ActiveNotes Size : " + std::to_string(keyMapper->activeNotesPool.size()), olc::WHITE, _TEXT_SCALE);
     }
     void SeekRoutine(int direction, float timeOffset) {
         if (direction == -1) {
@@ -267,7 +265,7 @@ private:
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
             onscreenKey.position.y += 100.f * -1 * direction;
-            if (onscreenKey.position.y < 880.f) {
+            if (onscreenKey.position.y < _KEYSIZE) {
                 reset.push(onscreenKey);
             }
         }
@@ -281,7 +279,7 @@ private:
         keyMapper->threadLock.unlock();
     }
 
-    olc::Pixel getColor(bool isWhite, int velocity, std::string & note) {
+    olc::Pixel getColor(bool isWhite, int velocity, std::string& note) {
         if (isWhite) {
             if (velocity == 0) {
                 return olc::Pixel(210, 210, 210);
@@ -300,7 +298,7 @@ private:
         }
         return olc::RED;
     }
-    olc::Pixel getDrawingColor(bool isWhite, std::string & note) {
+    olc::Pixel getDrawingColor(bool isWhite, std::string& note) {
         vector3f darkMask(.8, .8, .8);
         if (!isWhite) {
             darkMask.setAll(.6);
@@ -312,18 +310,19 @@ private:
     void FillRoundedRect(olc::vd2d pos, olc::vd2d size, double radius, olc::Pixel color) {
         //FillRect(pos, size, olc::WHITE);
         //PATCH FOR SMALL RECTANGLES... relationship is with radius...
-        if (size.y < 24) {
-            size.y = 24;
+        radius = size.x / 2;
+        if (size.y < radius * 2) {
+            size.y = radius * 2;
         }
         olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
         olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
-        FillRect(innerRect_pos, innerRect + olc::vd2d(3.0, 3.0), color);
+        FillRect(innerRect_pos - olc::vd2d(3.0, 3.0), innerRect + olc::vd2d(6.0, 6.0), color);
 
         FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
         FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
 
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y + 1.0), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x + 1.0, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y + 2.0), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x + 2.0, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
 
         FillCircle(innerRect_pos, radius, color);
         FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y), radius, color);
@@ -331,12 +330,32 @@ private:
         FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y), radius, color);
     }
 
+    //void FillRoundedRect(olc::vd2d pos, olc::vd2d size, double radius, olc::Pixel color) {
+    //    //FillRect(pos, size, olc::WHITE);
+    //    //PATCH FOR SMALL RECTANGLES... relationship is with radius...
+    //    if (size.y < 24) {
+    //        size.y = 24;
+    //    }
+    //    //size.y -= size.x;
+    //    olc::vd2d rectPOS = pos;
+    //    rectPOS.y += size.x / 2;
+    //    FillRect(rectPOS, size, color);
+    //    
+    //    float _radius = size.x / 2 - .5f;
+    //    olc::vd2d circleOrigin = rectPOS;
+    //    circleOrigin.x += _radius;
+
+    //    FillCircle(circleOrigin, _radius, color);
+    //    circleOrigin.y += size.y;
+    //    FillCircle(circleOrigin, _radius, color);
+    //}
+
     void drawFrame(double timeElasped) {
-        keyMapper->threadLock.lock();
         double yOffSet = timeElasped * 100.f;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
         timeAccumalator += timeElasped * midiTimer.speed;
+
         if (timeAccumalator > midiTimer.qNotePerSec) {
             timeAccumalator = 0.f;
             scrollingLines.push(horizontalLine());
@@ -345,15 +364,18 @@ private:
         while (!scrollingLines.empty()) {
             horizontalLine line = scrollingLines.front();
             scrollingLines.pop();
-            DrawLine(olc::vd2d(line.left, line.y), olc::vd2d(line.right, line.y), olc::Pixel(50,50,50));
+            DrawLine(olc::vd2d(line.left, line.y), olc::vd2d(line.right, line.y), olc::Pixel(50, 50, 50));
             line.y -= yOffSet;
             if (line.y > 0) newHorizontalLinesQueue.push(line);
         }
         scrollingLines = newHorizontalLinesQueue;
+
+        keyMapper->threadLock.lock();
         while (!keyMapper->onScreenNoteElements.empty()) {
 
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
+
             FillRoundedRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), 12.0, getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
             onscreenKey.position.y -= yOffSet;
 
@@ -362,7 +384,7 @@ private:
         }
         keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
         for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-
+            if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
             if (keyMapper->activelyDrawing.count(i) > 0) {
                 key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
                 FillRoundedRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), 12.0, getDrawingColor(drawnKey->isWhite, drawnKey->name));

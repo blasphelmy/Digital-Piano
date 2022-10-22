@@ -1,3 +1,4 @@
+#include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
 #include "tsf.h"
 #include "minisdl_audio.h"
@@ -7,6 +8,7 @@
 #include "DigitalPiano.h"
 #include "MAPPER.h"
 #include "key.h"
+#include <windows.h>
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
@@ -21,7 +23,6 @@
 #include <queue>
 #include <mutex>
 
-
 bool done;
 tsf* soundFile;
 static void finish(int ignore) { done = true; }
@@ -31,9 +32,8 @@ int memoryManagement(DigitalPiano* digitalPiano) {
     while (digitalPiano->midiTimer.flag != -1) {
         while (keyMapper->activeNotesPool.size() > 12) {
             keyMapper->threadLock.lock();
-            activeNotes note = keyMapper->activeNotesPool.front();
+            tsf_note_off(soundFile, 0, keyMapper->activeNotesPool.front().keyId + 21);
             keyMapper->activeNotesPool.pop();
-            tsf_note_off(soundFile, 0, note.keyId + 21);
             keyMapper->threadLock.unlock();
         }
     }
@@ -42,7 +42,7 @@ int memoryManagement(DigitalPiano* digitalPiano) {
 
 int guiRenderThread(MAPPER * keyMapper, DigitalPiano * digitalPiano) {
     digitalPiano->connectMapper(keyMapper);
-    if (digitalPiano->Construct(1920, 1080, 1, 1))
+    if (digitalPiano->Construct(_WINDOW_W, _WINDOW_H, 1, 1))
         digitalPiano->Start();
     return 0;
 }
@@ -52,18 +52,15 @@ int inputThread(MAPPER * keyMapper) {
     std::vector<unsigned char> message;
     int nBytes, i;
     double stamp;
-    // Check available ports.
     unsigned int nPorts = midiin->getPortCount();
 
     if (nPorts == 0) {
-        //std::cout << "No ports available!\n";
         goto cleanup;
     }
     midiin->openPort(0);
     midiin->ignoreTypes(false, false, false);
     done = false;
     (void)signal(SIGINT, finish);
-    //std::cout << "Reading MIDI from port ... quit with Ctrl-C.\n";
 
     while (!done) {
         stamp = midiin->getMessage(&message);
@@ -74,7 +71,6 @@ int inputThread(MAPPER * keyMapper) {
         }   
         //Sleep(1);
     }
-    // Clean up
 cleanup:
     delete midiin;
     return 0;
@@ -108,7 +104,10 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     digitalPiano->playSignal();
     keyMapper->pedal = true;
     midiTimer.start = std::chrono::high_resolution_clock::now();
-    while (midiTimer.index < midifile[0].size() && !done && midiTimer.flag != -1) {
+    while (midiTimer.index < midifile[0].size() 
+       && !done 
+        && midiTimer.flag != -1) {
+       
         action = true;
         midiTimer.tick();
         while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
@@ -124,7 +123,9 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             }
         }
 
-        while (midiTimer.flag == 2 && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) {
+        while (midiTimer.flag == 2 
+            && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) 
+        {
             midiTimer.index++;
             if (midiTimer.index > midifile[0].size() - 1) {
                 midiTimer.index = midifile[0].size() - 1;
@@ -136,19 +137,20 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
                 break;
             }
         }
-        while (midiTimer.index < midifile[0].size() 
-                && midiTimer.flag == 0 
-                && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) 
+        while ( midiTimer.index < midifile[0].size() 
+             && midiTimer.flag == 0 
+             && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) 
         {
             event = midifile[0][midiTimer.index];
-            if(/*(int)event[0] == 176 || */(int)event[0] == 144 || (int)event[0] == 128)keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
+            
+            //ignore pedals when playing midi file.
+            if(/*(int)event[0] == 176 || */(int)event[0] == 144 || (int)event[0] == 128)
+                keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
+            
             midiTimer.index++;
-            midiTimer.numVoices++;
         }
-        Sleep(1);
     }
     tsf_note_off_all(soundFile);
-    midiTimer.numVoices = 0;
     midiTimer.isPlaying = false;
     keyMapper->flushActiveNotes();
     return action;
@@ -167,25 +169,46 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
 
 int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
 }
+void setGlobalVariables() {
+    //https://stackoverflow.com/questions/54912038/querying-windows-display-scaling
+    auto activeWindow = GetActiveWindow();
+    HMONITOR monitor = MonitorFromWindow(activeWindow, MONITOR_DEFAULTTONEAREST);
 
-int main()
-{
+    // Get the logical width and height of the monitor
+    MONITORINFOEX monitorInfoEx;
+    monitorInfoEx.cbSize = sizeof(monitorInfoEx);
+    GetMonitorInfo(monitor, &monitorInfoEx);
+    auto cxLogical = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
+    auto cyLogical = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
+
+    _WINDOW_W = (float)cxLogical - 200;
+    _WINDOW_H = (float)cyLogical - 200;
+
+    //_WINDOW_W = 912;
+    //_WINDOW_H = 1080.f;
+
+    _KEYSIZE = _WINDOW_H / 1.2272727273;
+    _TEXT_SCALE = 1;
+    if (_WINDOW_W < 1080) _TEXT_SCALE = 2;
+
     SDL_AudioSpec OutputAudioSpec;
-    //OutputAudioSpec.freq        = 44100;
     OutputAudioSpec.freq = 32000;
-    OutputAudioSpec.format      = AUDIO_S16;
-    OutputAudioSpec.channels    = 2;
-    OutputAudioSpec.samples     = 1024;
-    OutputAudioSpec.callback    = AudioCallback;
+    OutputAudioSpec.format = AUDIO_S16;
+    OutputAudioSpec.channels = 2;
+    OutputAudioSpec.samples = 1024;
+    OutputAudioSpec.callback = AudioCallback;
     int dcbGain = 0;
 
     SDL_AudioInit(NULL);
     soundFile = tsf_load_filename("soundfile_1.sf2");
     tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
-    tsf_set_max_voices(soundFile, 256);
-    //tsf_set_max_voices(soundFile, 128);
+    tsf_set_max_voices(soundFile, 312);
     SDL_OpenAudio(&OutputAudioSpec, NULL);
     SDL_PauseAudio(0);
+}
+int main()
+{
+    setGlobalVariables();
 
     MAPPER* keyMapper = new MAPPER();
     DigitalPiano * app = new DigitalPiano();

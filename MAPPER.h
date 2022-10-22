@@ -1,4 +1,5 @@
 #pragma once
+#include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
 #include "tsf.h"
 #include "minisdl_audio.h"
@@ -46,13 +47,12 @@ public:
         //set up white keys
         //index 0-51 : white keys
         //index 52-87 : black keys
-        olc::vd2d       whiteKeySize(1920.f / 54.f, 200);
-        olc::vd2d       blackKeySize(1920.f / 70.f, 130);
-        double          slice = 1920.f / 52.f;
+        double          slice = _WINDOW_W / 52.f;
+        olc::vd2d       whiteKeySize(_WINDOW_W / 54.f, _WINDOW_H / 5.4);
+        olc::vd2d       blackKeySize(_WINDOW_W / 70.f, _WINDOW_H / 8.3076923);
         std::string     abc = "ABCDEFG";
-        olc::vd2d       initialPos(0, 880);
+        olc::vd2d       initialPos(0, _KEYSIZE);
         olc::vd2d       offSet(slice, 0);
-        int             i = 0;
         keyIdMap = {
             //white keys
             {0, 0},{2, 1},{3, 2},{5, 3},{7, 4},
@@ -81,7 +81,7 @@ public:
             {81, 85},{83, 86},{85, 87}
 
         };
-
+        int i = 0;
         while (i < 52) {
             key newKey(std::string(1, abc.at(i % 7)), true, initialPos, whiteKeySize);
             initialPos = initialPos + offSet;
@@ -92,10 +92,10 @@ public:
         //create first a# key
         key newKey(false, blackKeySize);
         newKey.name = std::string("A");
-        newKey.position = olc::vd2d(slice * .5, 880);
+        newKey.position = olc::vd2d(slice * .5, _KEYSIZE);
         keyMap[i] = newKey;
         //create the subsequent groups of 5 black keys
-        initialPos = olc::vd2d(slice * 2.5, 880);
+        initialPos = olc::vd2d(slice * 2.5, _KEYSIZE);
         for (int y = 53; y < 88; y = y + 5) {
 
             key k1(false, blackKeySize);
@@ -152,14 +152,13 @@ public:
         threadLock.lock();
         if (cat == 144 || cat == 128) {
             if (velocity != 0) {
-                //while (tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 100.f)) == 0)
                 tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
                 activeNotesPool.push(activeNotes(0, keyId));
                 key thisKey = keyMap[keyIdMap[keyId]];
                 FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
                 newFlyingNote->name = thisKey.name;
                 newFlyingNote->position = thisKey.position;
-                newFlyingNote->position.y = 889;
+                newFlyingNote->position.y = _KEYSIZE;
                 newFlyingNote->size = thisKey.size;
                 newFlyingNote->size.y = -1;
                 activelyDrawing.emplace(std::make_pair(keyIdMap[keyId], newFlyingNote));

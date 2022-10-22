@@ -1,4 +1,5 @@
 #pragma once
+#include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
 #include "tsf.h"
 #include "minisdl_audio.h"
@@ -70,7 +71,6 @@ public:
     }
 
 };
-
 
 class FlyingNotes : public key {
 public:
