@@ -148,6 +148,7 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     }
     tsf_note_off_all(soundFile);
     midiTimer.isPlaying = false;
+    midiTimer.timeSinceStart = 0.0;
     keyMapper->flushActiveNotes();
     return action;
 }

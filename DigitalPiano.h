@@ -48,7 +48,20 @@ struct MidiTimer {
     }
 };
 
-class PixelGameEngine_ETX : public olc::PixelGameEngine {
+struct ProgressBar {
+    olc::vd2d bg          = olc::vd2d(_WINDOW_W, 20.f);
+    olc::vd2d progressBar = olc::vd2d(0, 20.f);
+    olc::vd2d pos         = olc::vd2d(0, 0);
+    olc::Pixel fillColor  = olc::Pixel(33, 148, 58);
+    void resetProgressBar() {
+        progressBar.x = progressBar.y = 0;
+    }
+    void setProgressBar(float timeSinceStart, float duration) {
+        progressBar.x = _WINDOW_W * (timeSinceStart / duration);
+    }
+};
+
+class PIXELGAMEENGINE_EXT : public olc::PixelGameEngine {
 public :
     struct horizontalLine { float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W; };
 public :
@@ -75,7 +88,7 @@ public :
     }
 };
 
-class DigitalPiano : public PixelGameEngine_ETX {
+class DigitalPiano : public PIXELGAMEENGINE_EXT {
 public:
     DigitalPiano() {
         sAppName = "Digital Piano";
@@ -84,12 +97,13 @@ public:
     }
 public:
     MAPPER* keyMapper = nullptr;
-    MidiTimer   midiTimer;
+    MidiTimer midiTimer;
 private:
     std::unordered_map<std::string, vector3i> colorMap;
-    std::queue<horizontalLine> scrollingLines;
-    float timeAccumalator = 500.f;
-    float targetBPM = 1.5f;
+    std::queue<horizontalLine>                scrollingLines;
+    ProgressBar                               progressBar;
+    float                                     timeAccumalator = 500.f;
+    float                                     targetBPM = 1.5f;
 
 public:
     bool OnUserCreate() override {
@@ -270,11 +284,11 @@ private:
     }
     void drawData() {
         int i = 0;
-        DrawString(10, 20, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
-        DrawString(10, 45, "Options : clairedelune.mid | mozartk545.mid | arab2.mid ", olc::YELLOW, _TEXT_SCALE);
+        DrawString(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
+        DrawString(10, 50, "Options : clairedelune.mid | mozartk545.mid | arab2.mid ", olc::YELLOW, _TEXT_SCALE);
         DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid | cianwood.mid", olc::YELLOW, _TEXT_SCALE);
-        DrawString(10, 95, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
-        DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, _TEXT_SCALE);
+        DrawString(10, 90, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
+        //DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, _TEXT_SCALE);
         //DrawString(10, 145, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, _TEXT_SCALE);
         //DrawString(10, 170, "ActiveNotes Size : " + std::to_string(keyMapper->activeNotesPool.size()), olc::WHITE, _TEXT_SCALE);
     }
@@ -306,27 +320,12 @@ private:
     }
 
     olc::Pixel getColor(bool isWhite, int velocity, std::string& note) {
-        if (isWhite) {
-            if (velocity == 0) {
-                return olc::Pixel(210, 210, 210);
-            }
-            else {
-                return getDrawingColor(isWhite, note);
-            }
-        }
-        else {
-            if (velocity == 0) {
-                return olc::Pixel(25, 25, 25);
-            }
-            else {
-                return getDrawingColor(isWhite, note);
-            }
-        }
-        return olc::RED;
+        if (isWhite)
+            return velocity == 0 ? olc::Pixel(210, 210, 210) : getDrawingColor(isWhite, note);
+        return velocity == 0 ? olc::Pixel(25, 25, 25) : getDrawingColor(isWhite, note);
     }
     olc::Pixel getDrawingColor(bool isWhite, std::string& note) {
-        vector3f darkMask(.8, .8, .8);
-        if (!isWhite) darkMask.setAll(.6);
+        vector3f darkMask(isWhite ? .8 : .6);
         vector3i color = colorMap[note];
         color = color * darkMask;
         return olc::Pixel(color.x, color.y, color.z);
@@ -385,6 +384,10 @@ private:
 
         }
         keyMapper->threadLock.unlock();
+        progressBar.setProgressBar(midiTimer.timeSinceStart / 1000.f, midiTimer.duration);
+        FillRect(progressBar.pos, progressBar.bg, olc::DARK_GREY);
+        FillRect(progressBar.pos, progressBar.progressBar, progressBar.fillColor);
+        DrawString(10, 7, std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 1);
     }
 };
 class NoteAnalyzer {

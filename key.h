@@ -75,8 +75,8 @@ public:
 class FlyingNotes : public key {
 public:
     using key::key;
+    vector3i color;
     double duration = 0.0f;
-    olc::Pixel color;
     void addDuration(double dur) {
         duration += dur;
     }

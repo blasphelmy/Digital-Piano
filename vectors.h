@@ -100,9 +100,12 @@ struct vector3d {
 };
 
 struct vector3f {
-    float x;
-    float y;
-    float z;
+    float x, y, z;
+    vector3f(float F) {
+        this->x = F;
+        this->y = F;
+        this->z = F;
+    }
     vector3f(float x, float y, float z) {
         this->x = x;
         this->y = y;
@@ -113,6 +116,7 @@ struct vector3f {
         this->y = 0;
         this->z = 0;
     }
+
     ~vector3f() {}
     void setAll(float xyz) {
         this->x = xyz;
@@ -122,9 +126,7 @@ struct vector3f {
 };
 
 struct vector3i {
-    int x;
-    int y;
-    int z;
+    int x, y, z;
     vector3i(int x, int y, int z) {
         this->x = x;
         this->y = y;
