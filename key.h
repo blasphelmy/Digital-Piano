@@ -43,17 +43,17 @@ public:
         olc::vd2d size
     )
     {
-        this->size = size;
-        this->isWhite = isWhite;
+        this->size      = size;
+        this->isWhite   = isWhite;
     };
     key(
         std::string name,
         bool        isWhite,
         olc::vd2d   position
     ) {
-        this->isWhite = isWhite;
-        this->position = position;
-        this->name = name;
+        this->isWhite   = isWhite;
+        this->position  = position;
+        this->name      = name;
     }
     key(
         std::string name,
@@ -61,10 +61,10 @@ public:
         olc::vd2d   position,
         olc::vd2d   size
     ) {
-        this->isWhite = isWhite;
-        this->position = position;
-        this->name = name;
-        this->size = size;
+        this->isWhite   = isWhite;
+        this->position  = position;
+        this->name      = name;
+        this->size      = size;
     }
     ~key() {
 

@@ -77,8 +77,8 @@ cleanup:
 }
 static void AudioCallback(void* data, Uint8* stream, int len)
 {
-    int SampleCount = (len / (2 * sizeof(short))); //2 output channels
-    tsf_render_short(soundFile, (short*)stream, SampleCount, 0);
+    int SampleCount     = (len / (2 * sizeof(short))); //2 output channels
+    tsf_render_short    (soundFile, (short*)stream, SampleCount, 0);
 }
 smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     smf::MidiFile newMidiFile(fileName);
@@ -89,21 +89,17 @@ smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     return newMidiFile;
 }
 bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPiano) {
-    bool action = false;
-    smf::MidiFile midifile = getMidiFileRoutine(fileName);
-    smf::MidiEvent event;
-    MidiTimer &midiTimer = digitalPiano->midiTimer;
-    midiTimer.index = 0;
-    midiTimer.timeSinceStart = 0.0;
-    midiTimer.qNotePerSec = midifile.getFileDurationInSeconds() / midifile.getFileDurationInTicks() * midifile.getTicksPerQuarterNote();
-    if (midiTimer.qNotePerSec < .5) {
-        midiTimer.qNotePerSec = .5;
-    }
-    midiTimer.duration = midifile.getFileDurationInSeconds();
-    midiTimer.fileName = midifile.getFilename();
+    bool action                 = false;
+    smf::MidiFile midifile      = getMidiFileRoutine(fileName);
+    MidiTimer &midiTimer        = digitalPiano->midiTimer;
+    midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds() / midifile.getFileDurationInTicks() * midifile.getTicksPerQuarterNote();
+    midiTimer.duration          = midifile.getFileDurationInSeconds();
+    midiTimer.fileName          = midifile.getFilename();
+    midiTimer.start             = std::chrono::high_resolution_clock::now();
     digitalPiano->playSignal();
-    keyMapper->pedal = true;
-    midiTimer.start = std::chrono::high_resolution_clock::now();
+    smf::MidiEvent event;
+    if (midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
+    
     while (midiTimer.index < midifile[0].size() 
        && !done 
         && midiTimer.flag != -1) {
@@ -169,61 +165,62 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
 
 int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
 }
-void setGlobalVariables() {
+void setUp() {
     //https://stackoverflow.com/questions/54912038/querying-windows-display-scaling
-    auto activeWindow = GetActiveWindow();
-    HMONITOR monitor = MonitorFromWindow(activeWindow, MONITOR_DEFAULTTONEAREST);
+    auto activeWindow           = GetActiveWindow();
+    HMONITOR monitor            = MonitorFromWindow(activeWindow, MONITOR_DEFAULTTONEAREST);
 
     // Get the logical width and height of the monitor
     MONITORINFOEX monitorInfoEx;
-    monitorInfoEx.cbSize = sizeof(monitorInfoEx);
-    GetMonitorInfo(monitor, &monitorInfoEx);
-    auto cxLogical = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
-    auto cyLogical = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
+    monitorInfoEx.cbSize        = sizeof(monitorInfoEx);
+    GetMonitorInfo              (monitor, &monitorInfoEx);
+    auto cxLogical              = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
+    auto cyLogical              = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
 
-    _WINDOW_W = (float)cxLogical - 200;
-    _WINDOW_H = (float)cyLogical - 200;
+    _WINDOW_W                   = (float)cxLogical - 200;
+    _WINDOW_H                   = (float)cyLogical - 200;
 
-    //_WINDOW_W = 912;
-    //_WINDOW_H = 1080.f;
+    //_WINDOW_W                 = 912;
+    //_WINDOW_H                 = 1080.f;
 
-    _KEYSIZE = _WINDOW_H / 1.2272727273;
-    _TEXT_SCALE = 1;
-    if (_WINDOW_W < 1080) _TEXT_SCALE = 2;
+    _KEYSIZE                    = _WINDOW_H / 1.2272727273;
+    _TEXT_SCALE                 = 1;
+
+    if (_WINDOW_W < 1080)       _TEXT_SCALE = 2;
 
     SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq = 32000;
-    OutputAudioSpec.format = AUDIO_S16;
-    OutputAudioSpec.channels = 2;
-    OutputAudioSpec.samples = 1024;
-    OutputAudioSpec.callback = AudioCallback;
+    OutputAudioSpec.freq        = 32000;
+    OutputAudioSpec.format      = AUDIO_S16;
+    OutputAudioSpec.channels    = 2;
+    OutputAudioSpec.samples     = 1024;
+    OutputAudioSpec.callback    = AudioCallback;
     int dcbGain = 0;
 
-    SDL_AudioInit(NULL);
-    soundFile = tsf_load_filename("soundfile_1.sf2");
-    tsf_set_output(soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
-    tsf_set_max_voices(soundFile, 312);
-    SDL_OpenAudio(&OutputAudioSpec, NULL);
-    SDL_PauseAudio(0);
+    SDL_AudioInit               (NULL);
+    soundFile                   = tsf_load_filename("soundfile_1.sf2");
+    tsf_set_output              (soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
+    tsf_set_max_voices          (soundFile, 312);
+    SDL_OpenAudio               (&OutputAudioSpec, NULL);
+    SDL_PauseAudio              (0);
 }
 int main()
 {
-    setGlobalVariables();
+    setUp                               ();
 
-    MAPPER* keyMapper = new MAPPER();
-    DigitalPiano * app = new DigitalPiano();
-    //NoteAnalyzer* analyzer = new NoteAnalyzer(app);
-    keyMapper -> soundFile = soundFile;
+    MAPPER* keyMapper                   = new MAPPER();
+    DigitalPiano * app                  = new DigitalPiano();
+    //NoteAnalyzer* analyzer            = new NoteAnalyzer(app);
+    keyMapper->soundFile                = soundFile;
 
-    std::thread guiThreadObject(guiRenderThread, keyMapper, app);
-    std::thread inputThreadObject(inputThread, keyMapper);
-    std::thread loadSongInputThread(playSongInputThread, keyMapper, app);
-    std::thread memoryManagementThread(memoryManagement, app);
+    std::thread guiThreadObject         (guiRenderThread, keyMapper, app);
+    std::thread inputThreadObject       (inputThread, keyMapper);
+    std::thread loadSongInputThread     (playSongInputThread, keyMapper, app);
+    std::thread memoryManagementThread  (memoryManagement, app);
     
-    guiThreadObject.join();
-    inputThreadObject.join();
-    loadSongInputThread.join();
-    memoryManagementThread.join();
+    guiThreadObject                     .join();
+    inputThreadObject                   .join();
+    loadSongInputThread                 .join();
+    memoryManagementThread              .join();
 
     delete keyMapper;
     delete soundFile;

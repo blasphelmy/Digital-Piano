@@ -23,6 +23,7 @@
 #include <mutex>
 
 struct MidiTimer {
+    //chrono library is so verbose.
     std::chrono::high_resolution_clock::time_point  start;
     std::chrono::high_resolution_clock::time_point  finish;
     int flag                 = 0;
@@ -37,7 +38,7 @@ struct MidiTimer {
     bool isPlaying           = false;
     std::mutex midiLock;
     void tick() {
-        Sleep(1);
+        Sleep                (1);
         if (speed > 3) speed = 3;
         if (speed < 0) speed = 0;
         this->finish         = std::chrono::high_resolution_clock::now();
@@ -47,7 +48,7 @@ struct MidiTimer {
     }
 };
 
-class PIXELGAMEENGINEADDONS : public olc::PixelGameEngine {
+class PixelGameEngine_ETX : public olc::PixelGameEngine {
 public :
     struct horizontalLine { float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W; };
 public :
@@ -74,7 +75,7 @@ public :
     }
 };
 
-class DigitalPiano : public PIXELGAMEENGINEADDONS {
+class DigitalPiano : public PixelGameEngine_ETX {
 public:
     DigitalPiano() {
         sAppName = "Digital Piano";
@@ -102,11 +103,11 @@ public:
         return true;
     }
     bool OnUserUpdate(float felaspedTime) override {
-        keyListeners();
-        Clear(olc::Pixel(40, 40, 40));
-        drawFrame(felaspedTime);
-        drawData();
-        SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
+        keyListeners    ();
+        Clear           (olc::Pixel(40, 40, 40));
+        drawFrame       (felaspedTime);
+        drawData        ();
+        SetPixelMode    (olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
     bool OnUserDestroy() override {
@@ -117,8 +118,10 @@ public:
         keyMapper = newMapper;
     }
     void playSignal() {
+        midiTimer.index = 0;
+        midiTimer.timeSinceStart = 0.0;
         timeAccumalator = 0.f;
-        keyMapper->pedal = false;
+        keyMapper->pedal = true;
     }
 private:
     void keyListeners() {
@@ -272,8 +275,8 @@ private:
         DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid | cianwood.mid", olc::YELLOW, _TEXT_SCALE);
         DrawString(10, 95, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
         DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, _TEXT_SCALE);
-        DrawString(10, 145, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, _TEXT_SCALE);
-        DrawString(10, 170, "ActiveNotes Size : " + std::to_string(keyMapper->activeNotesPool.size()), olc::WHITE, _TEXT_SCALE);
+        //DrawString(10, 145, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, _TEXT_SCALE);
+        //DrawString(10, 170, "ActiveNotes Size : " + std::to_string(keyMapper->activeNotesPool.size()), olc::WHITE, _TEXT_SCALE);
     }
     void SeekRoutine(int direction, float timeOffset) {
         if (direction == -1) {

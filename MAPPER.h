@@ -109,18 +109,18 @@ public:
             key k5(false, blackKeySize);
             k5.name = std::string("A");
 
-            k1.position = initialPos;
-            initialPos.x = initialPos.x + slice;
-            k2.position = initialPos;
-            initialPos.x = initialPos.x + (2 * slice);
-            k3.position = initialPos;
-            initialPos.x = initialPos.x + slice;
-            k4.position = initialPos;
-            initialPos.x = initialPos.x + slice;
-            k5.position = initialPos;
-            initialPos.x = initialPos.x + (2 * slice);
+            k1.position   = initialPos;
+            initialPos.x  = initialPos.x + slice;
+            k2.position   = initialPos;
+            initialPos.x  = initialPos.x + (2 * slice);
+            k3.position   = initialPos;
+            initialPos.x  = initialPos.x + slice;
+            k4.position   = initialPos;
+            initialPos.x  = initialPos.x + slice;
+            k5.position   = initialPos;
+            initialPos.x  = initialPos.x + (2 * slice);
 
-            keyMap[y] = k1;
+            keyMap[y]     = k1;
             keyMap[y + 1] = k2;
             keyMap[y + 2] = k3;
             keyMap[y + 3] = k4;
@@ -154,22 +154,24 @@ public:
             if (velocity != 0) {
                 tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
                 activeNotesPool.push(activeNotes(0, keyId));
-                key thisKey = keyMap[keyIdMap[keyId]];
+
+                key thisKey                = keyMap[keyIdMap[keyId]];
                 FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
-                newFlyingNote->name = thisKey.name;
-                newFlyingNote->position = thisKey.position;
-                newFlyingNote->position.y = _KEYSIZE + (_KEYSIZE * .02f);
-                newFlyingNote->size = thisKey.size;
-                newFlyingNote->size.y = -1;
-                activelyDrawing.emplace(std::make_pair(keyIdMap[keyId], newFlyingNote));
+                newFlyingNote->name        = thisKey.name;
+                newFlyingNote->position    = thisKey.position;
+                newFlyingNote->position.y  = _KEYSIZE + (_KEYSIZE * .02f);
+                newFlyingNote->size        = thisKey.size;
+                newFlyingNote->size.y      = -1;
+                activelyDrawing            .emplace(std::make_pair(keyIdMap[keyId], newFlyingNote));
             }
             else {
                 if (activelyDrawing.count(keyIdMap[keyId]) > 0) {
                     onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap[keyId])->second));
                     delete activelyDrawing.find(keyIdMap[keyId])->second;
                 }
-                if(keyMap[keyIdMap[keyId]].velocity > 0) activelyDrawing.erase(keyIdMap[keyId]);
-                if (!pedal)
+                if(keyMap[keyIdMap[keyId]].velocity > 0) 
+                    activelyDrawing.erase(keyIdMap[keyId]);
+                if (!pedal) 
                     tsf_note_off(soundFile, 0, keyId + 21);
             }
             keyMap[keyIdMap[keyId]].velocity = velocity;
