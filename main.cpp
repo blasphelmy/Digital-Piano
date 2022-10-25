@@ -185,9 +185,6 @@ void setUp() {
     _WINDOW_W                   = (float)cxLogical - 200;
     _WINDOW_H                   = (float)cyLogical - 200;
 
-    //_WINDOW_W                 = 912;
-    //_WINDOW_H                 = 1080.f;
-
     _KEYSIZE                    = _WINDOW_H / 1.2272727273;
     _TEXT_SCALE                 = 1;
 

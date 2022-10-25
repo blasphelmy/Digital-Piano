@@ -52,25 +52,24 @@ public :
     struct horizontalLine { float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W; };
 public :
     void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color) {
-        float radius = size.x / 2;
-        if (size.y < radius * 2) {
-            size.y = radius * 2;
+        float radius = 4.f;
+        if (size.y < 15) {
+            size.y = 15;
         }
         olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
-        innerRect.x -= 1.f;
         olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
-        FillRect(innerRect_pos - olc::vd2d(2.0, 2.0), innerRect + olc::vd2d(6.0, 6.0), color);
+        FillRect(innerRect_pos, innerRect, color);
 
         FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
         FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
 
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y + 2.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x + 2.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 1.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x - 1.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
 
         FillCircle(innerRect_pos, radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y + innerRect.y), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x, innerRect_pos.y), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 2.f), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y + innerRect.y - 2.f), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y), radius, color);
     }
 };
 

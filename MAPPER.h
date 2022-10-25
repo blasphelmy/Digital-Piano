@@ -92,10 +92,10 @@ public:
         //create first a# key
         key newKey(false, blackKeySize);
         newKey.name = std::string("A");
-        newKey.position = olc::vd2d(slice * .5, _KEYSIZE);
+        newKey.position = olc::vd2d(slice * .5 , _KEYSIZE);
         keyMap[i] = newKey;
         //create the subsequent groups of 5 black keys
-        initialPos = olc::vd2d(slice * 2.5, _KEYSIZE);
+        initialPos = olc::vd2d(slice * 2.5 + 3.f, _KEYSIZE);
         for (int y = 53; y < 88; y = y + 5) {
 
             key k1(false, blackKeySize);
