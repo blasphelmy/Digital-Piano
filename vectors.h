@@ -22,38 +22,38 @@
 #include <mutex>
 
 template <class TYPE>
-struct vector2d {
+struct vector2d_generic {
     TYPE x;
     TYPE y;
-    vector2d(TYPE x, TYPE y, TYPE z) {
+    vector2d_generic(TYPE x, TYPE y, TYPE z) {
         this->x = x;
         this->y = y;
     }
-    vector2d() {
+    vector2d_generic() {
         this->x = 0;
         this->y = 0;
     }
-    ~vector2d() {}
-    vector2d operator + (vector2d const& obj) {
-        vector2d result;
+    ~vector2d_generic() {}
+    vector2d_generic operator + (vector2d_generic const& obj) {
+        vector2d_generic result;
         result.x = x + obj.x;
         result.y = y + obj.y;
         return result;
     }
-    vector2d operator - (vector2d const& obj) {
-        vector2d result;
+    vector2d_generic operator - (vector2d_generic const& obj) {
+        vector2d_generic result;
         result.x = x - obj.x;
         result.y = y - obj.y;
         return result;
     }
-    vector2d operator * (vector2d const& obj) {
-        vector2d result;
+    vector2d_generic operator * (vector2d_generic const& obj) {
+        vector2d_generic result;
         result.x = x * obj.x;
         result.y = y * obj.y;
         return result;
     }
-    vector2d operator / (vector2d const& obj) {
-        vector2d result;
+    vector2d_generic operator / (vector2d_generic const& obj) {
+        vector2d_generic result;
         result.x = x / obj.x;
         result.y = y / obj.y;
         return result;

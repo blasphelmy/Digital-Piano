@@ -77,22 +77,26 @@ cleanup:
 }
 static void AudioCallback(void* data, Uint8* stream, int len)
 {
-    int SampleCount     = (len / (2 * sizeof(short))); //2 output channels
-    tsf_render_short    (soundFile, (short*)stream, SampleCount, 0);
+    int SampleCount = (len / (2 * sizeof(short))); //2 output channels
+    tsf_render_short(soundFile, (short*)stream, SampleCount, 0);
 }
 smf::MidiFile getMidiFileRoutine(std::string& fileName) {
-    smf::MidiFile newMidiFile(fileName);
-    newMidiFile.doTimeAnalysis();
-    newMidiFile.linkNotePairs();
-    newMidiFile.joinTracks(); // we only care about 1 track right now
+    smf::MidiFile newMidiFile   (fileName);
+    newMidiFile                 .doTimeAnalysis();
+    newMidiFile                 .linkNotePairs();
+    newMidiFile                 .joinTracks(); // we only care about 1 track right now
 
     return newMidiFile;
 }
 bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPiano) {
+
     bool action                 = false;
     smf::MidiFile midifile      = getMidiFileRoutine(fileName);
     MidiTimer &midiTimer        = digitalPiano->midiTimer;
-    midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds() / midifile.getFileDurationInTicks() * midifile.getTicksPerQuarterNote();
+    midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds() 
+                                / midifile.getFileDurationInTicks() 
+                                * midifile.getTicksPerQuarterNote();
+
     midiTimer.duration          = midifile.getFileDurationInSeconds();
     midiTimer.fileName          = midifile.getFilename();
     midiTimer.start             = std::chrono::high_resolution_clock::now();

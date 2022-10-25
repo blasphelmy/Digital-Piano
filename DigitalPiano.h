@@ -21,7 +21,6 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
-
 struct MidiTimer {
     //chrono library is so verbose.
     std::chrono::high_resolution_clock::time_point  start;
@@ -45,19 +44,6 @@ struct MidiTimer {
         this->timeSinceStart = (this->timeSinceStart 
                              + (std::chrono::duration_cast<std::chrono::milliseconds>(this->finish - this->start).count() * this->speed));
         this->start          = std::chrono::high_resolution_clock::now();
-    }
-};
-
-struct ProgressBar {
-    olc::vd2d bg          = olc::vd2d(_WINDOW_W, 20.f);
-    olc::vd2d progressBar = olc::vd2d(0, 20.f);
-    olc::vd2d pos         = olc::vd2d(0, 0);
-    olc::Pixel fillColor  = olc::Pixel(33, 148, 58);
-    void resetProgressBar() {
-        progressBar.x = progressBar.y = 0;
-    }
-    void setProgressBar(float timeSinceStart, float duration) {
-        progressBar.x = _WINDOW_W * (timeSinceStart / duration);
     }
 };
 
@@ -98,6 +84,15 @@ public:
 public:
     MAPPER* keyMapper = nullptr;
     MidiTimer midiTimer;
+private:
+    struct ProgressBar {
+        olc::vd2d bg            = olc::vd2d(_WINDOW_W, 20.f);
+        olc::vd2d progressBar   = olc::vd2d(0, 20.f);
+        olc::vd2d pos           = olc::vd2d(0, 0);
+        olc::Pixel fillColor    = olc::Pixel(33, 148, 58);
+        void resetProgressBar   () { progressBar.x = progressBar.y = 0; }
+        void setProgressBar     (float timeSinceStart, float duration) { progressBar.x = _WINDOW_W * (timeSinceStart / duration); }
+    };
 private:
     std::unordered_map<std::string, vector3i> colorMap;
     std::queue<horizontalLine>                scrollingLines;
@@ -140,6 +135,7 @@ public:
 private:
     void keyListeners() {
         if (GetKey(olc::Key::LEFT).bPressed) {
+
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
             SeekRoutine(-1, targetBPM * 1000.f * 4);
