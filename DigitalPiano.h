@@ -26,11 +26,9 @@ struct MidiTimer {
     std::chrono::high_resolution_clock::time_point  start;
     std::chrono::high_resolution_clock::time_point  finish;
     int flag                 = 0;
-    int index                = 0;
+    unsigned int index       = 0;
     long long timeSinceStart = 0.0;
     float speed              = 1.0;
-    double ticks             = 0;
-    int TPQ                  = 0;
     float qNotePerSec        = 1.5f;
     float duration           = 0.f;
     std::string fileName     = "";
@@ -100,6 +98,16 @@ private:
     float                                     targetBPM = 1.5f;
 
 public:
+    void connectMapper(MAPPER* newMapper) {
+        keyMapper = newMapper;
+    }
+    void playSignal() {
+        midiTimer.index = 0;
+        midiTimer.timeSinceStart = 0.0;
+        timeAccumalator = 0.f;
+        keyMapper->pedal = true;
+    }
+private:
     bool OnUserCreate() override {
         colorMap["C"] = vector3i(254, 0, 0);
         colorMap["D"] = vector3i(45, 122, 142);
@@ -111,27 +119,20 @@ public:
         return true;
     }
     bool OnUserUpdate(float felaspedTime) override {
-        keyListeners    ();
-        Clear           (olc::Pixel(40, 40, 40));
-        drawFrame       (felaspedTime);
-        drawData        ();
-        SetPixelMode    (olc::Pixel::NORMAL); // Draw all pixels
+        keyListeners();
+        Clear(olc::Pixel(40, 40, 40));
+        drawFrame(felaspedTime);
+        drawData();
+        SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
     bool OnUserDestroy() override {
         midiTimer.flag = -1;
         return true;
     }
-    void connectMapper(MAPPER* newMapper) {
-        keyMapper = newMapper;
-    }
-    void playSignal() {
-        midiTimer.index = 0;
-        midiTimer.timeSinceStart = 0.0;
-        timeAccumalator = 0.f;
-        keyMapper->pedal = true;
-    }
+
 private:
+
     void keyListeners() {
         if (GetKey(olc::Key::LEFT).bPressed) {
 
@@ -300,23 +301,18 @@ private:
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
             onscreenKey.position.y += 100.f * -1 * direction;
-            if (onscreenKey.position.y < _KEYSIZE) {
-                reset.push(onscreenKey);
-            }
+            if (onscreenKey.position.y < _KEYSIZE)  reset.push(onscreenKey);
         }
         for (int i = 0; i < keyMapper->keyMap.size(); i++) {
             keyMapper->keyMap[i].velocity = 0;
-            if (keyMapper->activelyDrawing.count(i) > 0) {
-                keyMapper->activelyDrawing.erase(i);
-            }
+            if (keyMapper->activelyDrawing.count(i) > 0) keyMapper->activelyDrawing.erase(i);
         }
         keyMapper->onScreenNoteElements = reset;
         keyMapper->threadLock.unlock();
     }
 
     olc::Pixel getColor(bool isWhite, int velocity, std::string& note) {
-        if (isWhite)
-            return velocity == 0 ? olc::Pixel(210, 210, 210) : getDrawingColor(isWhite, note);
+        if (isWhite) return velocity == 0 ? olc::Pixel(210, 210, 210) : getDrawingColor(isWhite, note);
         return velocity == 0 ? olc::Pixel(25, 25, 25) : getDrawingColor(isWhite, note);
     }
     olc::Pixel getDrawingColor(bool isWhite, std::string& note) {

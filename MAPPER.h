@@ -33,14 +33,14 @@ struct activeNotes {
 
 class MAPPER {
 public:
-    std::array<key, 88>             keyMap;
-    std::map<int, int>              keyIdMap;
-    std::map<int, FlyingNotes* >    activelyDrawing;
-    std::queue<FlyingNotes>         onScreenNoteElements;
-    std::queue<activeNotes>         activeNotesPool;
-    tsf*                            soundFile = nullptr;
-    bool                            pedal = false;
-    std::mutex                      threadLock;
+    std::array<key, 88>                     keyMap;
+    std::unordered_map<int, int>            keyIdMap;
+    std::unordered_map<int, FlyingNotes* >  activelyDrawing;
+    std::queue<FlyingNotes>                 onScreenNoteElements;
+    std::queue<activeNotes>                 activeNotesPool;
+    tsf*                                    soundFile = nullptr;
+    bool                                    pedal = false;
+    std::mutex                              threadLock;
 
 public:
     MAPPER() {
