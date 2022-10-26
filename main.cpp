@@ -30,7 +30,7 @@ static void finish(int ignore) { done = true; }
 int memoryManagement(DigitalPiano* digitalPiano) {
     MAPPER* keyMapper = digitalPiano->keyMapper;
     while (digitalPiano->midiTimer.flag != -1) {
-        while (keyMapper->activeNotesPool.size() > 12) {
+        if (keyMapper->activeNotesPool.size() > 12) {
             keyMapper->threadLock.lock();
             tsf_note_off(soundFile, 0, keyMapper->activeNotesPool.front().keyId + 21);
             keyMapper->activeNotesPool.pop();
@@ -100,7 +100,7 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     midiTimer.duration          = midifile.getFileDurationInSeconds();
     midiTimer.fileName          = midifile.getFilename();
     midiTimer.start             = std::chrono::high_resolution_clock::now();
-    digitalPiano->playSignal();
+    digitalPiano                ->playSignal();
     smf::MidiEvent event;
     if (midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
     
@@ -150,10 +150,7 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             midiTimer.index++;
         }
     }
-    tsf_note_off_all(soundFile);
-    midiTimer.isPlaying = false;
-    midiTimer.timeSinceStart = 0.0;
-    keyMapper->flushActiveNotes();
+    digitalPiano->reset();
     return action;
 }
 int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
@@ -169,6 +166,7 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
 }
 
 int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
+    return 0;
 }
 void setUp() {
     //https://stackoverflow.com/questions/54912038/querying-windows-display-scaling
@@ -182,8 +180,8 @@ void setUp() {
     auto cxLogical              = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
     auto cyLogical              = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
 
-    _WINDOW_W                   = (float)cxLogical - 200;
-    _WINDOW_H                   = (float)cyLogical - 200;
+    _WINDOW_W                   = (float)cxLogical - (int)(cxLogical * .3);
+    _WINDOW_H                   = (float)cyLogical - (int)(cyLogical * .3);
 
     _KEYSIZE                    = _WINDOW_H / 1.2272727273;
     _TEXT_SCALE                 = 1;

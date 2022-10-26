@@ -154,9 +154,9 @@ struct vector3i {
     }
     vector3i operator * (vector3f const& obj) {
         vector3i result;
-        result.x = x * obj.x;
-        result.y = y * obj.y;
-        result.z = z * obj.z;
+        result.x = x * (float)obj.x;
+        result.y = y * (float)obj.y;
+        result.z = z * (float)obj.z;
         return result;
     }
     vector3i operator * (vector3i const& obj) {

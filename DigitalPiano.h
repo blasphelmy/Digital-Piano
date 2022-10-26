@@ -26,7 +26,7 @@ struct MidiTimer {
     std::chrono::high_resolution_clock::time_point  start;
     std::chrono::high_resolution_clock::time_point  finish;
     int flag                 = 0;
-    unsigned int index       = 0;
+    int index                = 0;
     long long timeSinceStart = 0.0;
     float speed              = 1.0;
     float qNotePerSec        = 1.5f;
@@ -102,10 +102,16 @@ public:
         keyMapper = newMapper;
     }
     void playSignal() {
-        midiTimer.index = 0;
-        midiTimer.timeSinceStart = 0.0;
-        timeAccumalator = 0.f;
-        keyMapper->pedal = true;
+        midiTimer.index             = 0;
+        midiTimer.timeSinceStart    = 0.0;
+        timeAccumalator             = 0.f;
+        keyMapper->pedal            = true;
+    }
+    void reset() {
+        tsf_note_off_all            (keyMapper->soundFile);
+        midiTimer.isPlaying         = false;
+        midiTimer.timeSinceStart    = 0.0;
+        keyMapper                   ->flushActiveNotes();
     }
 private:
     bool OnUserCreate() override {
@@ -135,7 +141,6 @@ private:
 
     void keyListeners() {
         if (GetKey(olc::Key::LEFT).bPressed) {
-
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
             SeekRoutine(-1, targetBPM * 1000.f * 4);
@@ -146,6 +151,9 @@ private:
             midiTimer.flag = 2;
             SeekRoutine(1, targetBPM * 1000.f * 4);
             midiTimer.midiLock.unlock();
+        }
+        if (GetKey(olc::SPACE).bPressed) {
+            midiTimer.speed = (midiTimer.speed > 0 ? 0.0 : 1.0);
         }
         if (GetKey(olc::Key::UP).bPressed) {
             midiTimer.speed = midiTimer.speed + .1;
@@ -300,7 +308,7 @@ private:
         while (!keyMapper->onScreenNoteElements.empty()) {
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
-            onscreenKey.position.y += 100.f * -1 * direction;
+            onscreenKey.position.y += timeOffset / 100.f * -1 * direction;
             if (onscreenKey.position.y < _KEYSIZE)  reset.push(onscreenKey);
         }
         for (int i = 0; i < keyMapper->keyMap.size(); i++) {
