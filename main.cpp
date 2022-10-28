@@ -1,3 +1,7 @@
+#define __WINDOWS_MM__
+#define TSF_IMPLEMENTATION
+#define OLC_PGE_APPLICATION
+
 #include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
 #include "tsf.h"
