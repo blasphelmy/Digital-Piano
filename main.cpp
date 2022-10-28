@@ -177,8 +177,8 @@ void setUp() {
     MONITORINFOEX monitorInfoEx;
     monitorInfoEx.cbSize        = sizeof(monitorInfoEx);
     GetMonitorInfo              (monitor, &monitorInfoEx);
-    auto cxLogical              = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
-    auto cyLogical              = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
+    float cxLogical             = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
+    float cyLogical             = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
 
     _WINDOW_W                   = (float)cxLogical - (int)(cxLogical * .3);
     _WINDOW_H                   = (float)cyLogical - (int)(cyLogical * .3);
