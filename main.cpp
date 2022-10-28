@@ -1,7 +1,6 @@
 #define __MACOSX_CORE__
 #define TSF_IMPLEMENTATION
 #define OLC_PGE_APPLICATION
-#define __RTMIDI_DEBUG__ 
 
 #include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
@@ -16,9 +15,6 @@
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-// #include <sqltypes.h>
-// #include <sql.h>
-// #include <sqlext.h>
 #include <signal.h>
 #include <thread>
 #include <map>
@@ -194,16 +190,16 @@ void setUp() {
 
     if (_WINDOW_W < 1080)       _TEXT_SCALE = 2;
 
-	SDL_AudioSpec OutputAudioSpec;
-	OutputAudioSpec.freq = 44100;
-	OutputAudioSpec.format = AUDIO_S16;
-	OutputAudioSpec.channels = 2;
-	OutputAudioSpec.samples = 4096;
-	OutputAudioSpec.callback = AudioCallback;
-    int dcbGain = 0;
+    SDL_AudioSpec OutputAudioSpec;
+    OutputAudioSpec.freq        = 32000;
+    OutputAudioSpec.format      = AUDIO_S16;
+    OutputAudioSpec.channels    = 2;
+    OutputAudioSpec.samples     = 1024;
+    OutputAudioSpec.callback    = AudioCallback;
+    float dcbGain = 0;
 
     SDL_AudioInit               (NULL);
-    soundFile                   = tsf_load_filename("soundfile_1.sf2");
+    soundFile                   = tsf_load_filename("./soundfile_1.sf2");
     tsf_set_output              (soundFile, TSF_STEREO_INTERLEAVED, OutputAudioSpec.freq, dcbGain);
     tsf_set_max_voices          (soundFile, 312);
     SDL_OpenAudio               (&OutputAudioSpec, NULL);

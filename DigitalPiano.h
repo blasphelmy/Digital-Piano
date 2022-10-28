@@ -160,7 +160,7 @@ private:
         if (GetKey(olc::Key::DOWN).bPressed) {
             midiTimer.speed = midiTimer.speed - .1;
         }
-        if (!midiTimer.isPlaying && GetKey(olc::SHIFT).bHeld) {
+        if (!midiTimer.isPlaying) {
             if (GetKey(olc::A).bPressed) {
                 midiTimer.fileName += "A";
             }
@@ -241,6 +241,7 @@ private:
             }
 
             if (GetKey(olc::K0).bPressed) {
+                std::cout << "tst" << std::endl;
                 midiTimer.fileName += "0";
             }
             if (GetKey(olc::K1).bPressed) {
