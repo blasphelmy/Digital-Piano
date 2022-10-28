@@ -6,7 +6,18 @@ cmake_minimum_required (VERSION 3.8)
 project ("DigitalPiano_cmake")
 
 # Add source to this project's executable.
-add_executable (DigitalPiano_cmake   "Binasc.h" "MidiEvent.h" "MidiEventList.h" "MidiFile.h" "MidiMessage.h" "Options.h" "Binasc.cpp" "MidiEvent.cpp" "MidiEventList.cpp" "MidiFile.cpp" "MidiMessage.cpp" "Options.cpp"  "DigitalPiano.h" "GLOBALVARIABLES.h" "key.h" "main.cpp" "MAPPER.h" "minisdl_audio.c" "minisdl_audio.h" "olcPixelGameEngineGL.h" "RtMidi.cpp" "RtMidi.h" "tml.h" "tsf.h" "vectors.h")
+add_executable (DigitalPiano_cmake "Binasc.h" "MidiEvent.h" "MidiEventList.h" "MidiFile.h" "MidiMessage.h" "Options.h" "Binasc.cpp" "MidiEvent.cpp" "MidiEventList.cpp" "MidiFile.cpp" "MidiMessage.cpp" "Options.cpp"  "DigitalPiano.h" "GLOBALVARIABLES.h" "key.h" "main.cpp" "MAPPER.h" "minisdl_audio.c" "minisdl_audio.h" "olcPixelGameEngineGL.h" "RtMidi.cpp" "RtMidi.h" "tml.h" "tsf.h" "vectors.h")
+
+# IF (APPLE)
+#    FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
+#    FIND_LIBRARY(COREFOUNDATION_LIBRARY CoreFoundation )
+#    FIND_LIBRARY(APPSERVICES ApplicationServices)
+# ENDIF (APPLE)
+
+find_package(PNG REQUIRED)
+include_directories(${PNG_INCLUDE_DIR})
+
+target_link_libraries(DigitalPiano_cmake PUBLIC "-framework CoreMIDI" "-framework CoreAudio" "-framework CoreFoundation" "-framework AudioUnit" "-framework CoreServices" "-framework OpenGL" "-framework GLUT" "-framework Carbon" ${PNG_LIBRARY} )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET DigitalPiano_cmake PROPERTY CXX_STANDARD 20)

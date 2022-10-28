@@ -11,10 +11,9 @@
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-#include <windows.h>
-#include <sqltypes.h>
-#include <sql.h>
-#include <sqlext.h>
+// #include <sqltypes.h>
+// #include <sql.h>
+// #include <sqlext.h>
 #include <signal.h>
 #include <thread>
 #include <map>
@@ -35,7 +34,7 @@ struct MidiTimer {
     bool isPlaying           = false;
     std::mutex midiLock;
     void tick() {
-        Sleep                (1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         if (speed > 3) speed = 3;
         if (speed < 0) speed = 0;
         this->finish         = std::chrono::high_resolution_clock::now();

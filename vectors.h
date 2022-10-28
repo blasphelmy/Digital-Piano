@@ -10,10 +10,9 @@
 #include "key.h"
 #include <iostream>
 #include <chrono>
-#include <windows.h>
-#include <sqltypes.h>
-#include <sql.h>
-#include <sqlext.h>
+// #include <sqltypes.h>
+// #include <sql.h>
+// #include <sqlext.h>
 #include <signal.h>
 #include <thread>
 #include <map>

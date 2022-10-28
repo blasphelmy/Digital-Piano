@@ -1,6 +1,7 @@
-#define __WINDOWS_MM__
+#define __MACOSX_CORE__
 #define TSF_IMPLEMENTATION
 #define OLC_PGE_APPLICATION
+#define __RTMIDI_DEBUG__ 
 
 #include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
@@ -12,14 +13,12 @@
 #include "DigitalPiano.h"
 #include "MAPPER.h"
 #include "key.h"
-#include <windows.h>
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-#include <windows.h>
-#include <sqltypes.h>
-#include <sql.h>
-#include <sqlext.h>
+// #include <sqltypes.h>
+// #include <sql.h>
+// #include <sqlext.h>
 #include <signal.h>
 #include <thread>
 #include <map>
@@ -163,7 +162,7 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
         if (digitalPiano->midiTimer.isPlaying) {
             playMidi(keyMapper, digitalPiano->midiTimer.fileName, digitalPiano);
         }
-        Sleep(10);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     } while (digitalPiano->midiTimer.flag != -1);
     done = true;
     return 0;
@@ -174,30 +173,33 @@ int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
 }
 void setUp() {
     //https://stackoverflow.com/questions/54912038/querying-windows-display-scaling
-    auto activeWindow           = GetActiveWindow();
-    HMONITOR monitor            = MonitorFromWindow(activeWindow, MONITOR_DEFAULTTONEAREST);
+    // auto activeWindow           = GetActiveWindow();
+    // HMONITOR monitor            = MonitorFromWindow(activeWindow, MONITOR_DEFAULTTONEAREST);
 
-    // Get the logical width and height of the monitor
-    MONITORINFOEX monitorInfoEx;
-    monitorInfoEx.cbSize        = sizeof(monitorInfoEx);
-    GetMonitorInfo              (monitor, &monitorInfoEx);
-    float cxLogical             = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
-    float cyLogical             = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
+    // // Get the logical width and height of the monitor
+    // MONITORINFOEX monitorInfoEx;
+    // monitorInfoEx.cbSize        = sizeof(monitorInfoEx);
+    // GetMonitorInfo              (monitor, &monitorInfoEx);
+    // float cxLogical             = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
+    // float cyLogical             = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
 
-    _WINDOW_W                   = (float)cxLogical - (int)(cxLogical * .3);
-    _WINDOW_H                   = (float)cyLogical - (int)(cyLogical * .3);
+    // _WINDOW_W                   = (float)cxLogical - (int)(cxLogical * .3);
+    // _WINDOW_H                   = (float)cyLogical - (int)(cyLogical * .3);
+
+    _WINDOW_W                   = 1080.f;
+    _WINDOW_H                   = 800.f;
 
     _KEYSIZE                    = _WINDOW_H / 1.2272727273;
     _TEXT_SCALE                 = 1;
 
     if (_WINDOW_W < 1080)       _TEXT_SCALE = 2;
 
-    SDL_AudioSpec OutputAudioSpec;
-    OutputAudioSpec.freq        = 32000;
-    OutputAudioSpec.format      = AUDIO_S16;
-    OutputAudioSpec.channels    = 2;
-    OutputAudioSpec.samples     = 1024;
-    OutputAudioSpec.callback    = AudioCallback;
+	SDL_AudioSpec OutputAudioSpec;
+	OutputAudioSpec.freq = 44100;
+	OutputAudioSpec.format = AUDIO_S16;
+	OutputAudioSpec.channels = 2;
+	OutputAudioSpec.samples = 4096;
+	OutputAudioSpec.callback = AudioCallback;
     int dcbGain = 0;
 
     SDL_AudioInit               (NULL);
@@ -216,12 +218,16 @@ int main()
     //NoteAnalyzer* analyzer            = new NoteAnalyzer(app);
     keyMapper->soundFile                = soundFile;
 
-    std::thread guiThreadObject         (guiRenderThread, keyMapper, app);
+    // std::thread guiThreadObject         (guiRenderThread, keyMapper, app);
     std::thread inputThreadObject       (inputThread, keyMapper);
     std::thread loadSongInputThread     (playSongInputThread, keyMapper, app);
     std::thread memoryManagementThread  (memoryManagement, app);
+
+    app->connectMapper(keyMapper);
+    if (app->Construct(_WINDOW_W, _WINDOW_H, 1, 1))
+        app->Start();
     
-    guiThreadObject                     .join();
+    // guiThreadObject                     .join();
     inputThreadObject                   .join();
     loadSongInputThread                 .join();
     memoryManagementThread              .join();
