@@ -11,16 +11,14 @@
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-#include <windows.h>
-#include <sqltypes.h>
-#include <sql.h>
-#include <sqlext.h>
 #include <signal.h>
 #include <thread>
 #include <map>
 #include <unordered_map>
 #include <queue>
 #include <mutex>
+#include <set>
+
 struct MidiTimer {
     //chrono library is so verbose.
     std::chrono::high_resolution_clock::time_point  start;
@@ -81,6 +79,7 @@ public:
 public:
     MAPPER* keyMapper = nullptr;
     MidiTimer midiTimer;
+    std::set<std::string> midiFileSet;
 private:
     struct ProgressBar {
         olc::vd2d bg            = olc::vd2d(_WINDOW_W, 20.f);
@@ -287,14 +286,17 @@ private:
         }
     }
     void drawData() {
-        int i = 0;
         DrawString(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
-        DrawString(10, 50, "Options : clairedelune.mid | mozartk545.mid | arab2.mid ", olc::YELLOW, _TEXT_SCALE);
-        DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid | cianwood.mid", olc::YELLOW, _TEXT_SCALE);
-        DrawString(10, 90, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
+        //DrawString(10, 50, "Options : clairedelune.mid | mozartk545.mid | arab2.mid ", olc::YELLOW, _TEXT_SCALE);
+        //DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid | cianwood.mid", olc::YELLOW, _TEXT_SCALE);
+        DrawString(10, 50, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
         //DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, _TEXT_SCALE);
         //DrawString(10, 145, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, _TEXT_SCALE);
         //DrawString(10, 170, "ActiveNotes Size : " + std::to_string(keyMapper->activeNotesPool.size()), olc::WHITE, _TEXT_SCALE);
+        int i = 0;
+        for (std::string fileName : midiFileSet) {
+            DrawString(10, 70 + (i++ * 20), fileName, olc::YELLOW, _TEXT_SCALE);
+        }
     }
     void SeekRoutine(int direction, float timeOffset) {
         if (direction == -1) {

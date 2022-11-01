@@ -11,10 +11,6 @@
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-#include <windows.h>
-#include <sqltypes.h>
-#include <sql.h>
-#include <sqlext.h>
 #include <signal.h>
 #include <thread>
 #include <map>
@@ -131,6 +127,16 @@ public:
     ~MAPPER() {
 
     }
+private: 
+    FlyingNotes* createFlyingNote(key thisKey) {
+        FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
+        newFlyingNote->name = thisKey.name;
+        newFlyingNote->position = thisKey.position;
+        newFlyingNote->position.y = _KEYSIZE + (_KEYSIZE * .02f);
+        newFlyingNote->size = thisKey.size;
+        newFlyingNote->size.y = -1;
+        return newFlyingNote;
+    }
 public:
     void flushActiveNotes() {
         std::queue<activeNotes> newqueue;
@@ -152,16 +158,10 @@ public:
         threadLock.lock();
         if (cat == 144 || cat == 128) {
             if (velocity != 0) {
-                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
-                activeNotesPool.push(activeNotes(0, keyId));
-
+                tsf_note_on                 (soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
+                activeNotesPool            .push(activeNotes(0, keyId));
                 key thisKey                = keyMap[keyIdMap[keyId]];
-                FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
-                newFlyingNote->name        = thisKey.name;
-                newFlyingNote->position    = thisKey.position;
-                newFlyingNote->position.y  = _KEYSIZE + (_KEYSIZE * .02f);
-                newFlyingNote->size        = thisKey.size;
-                newFlyingNote->size.y      = -1;
+                FlyingNotes* newFlyingNote = createFlyingNote(thisKey);
                 activelyDrawing            .emplace(std::make_pair(keyIdMap[keyId], newFlyingNote));
             }
             else {

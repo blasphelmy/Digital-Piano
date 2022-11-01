@@ -12,16 +12,16 @@
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-#include <windows.h>
-#include <sqltypes.h>
-#include <sql.h>
-#include <sqlext.h>
+#include <fstream>
+#include <filesystem>
+#include <algorithm>
 #include <signal.h>
 #include <thread>
 #include <map>
 #include <unordered_map>
 #include <queue>
 #include <mutex>
+#include <set>
 
 bool done;
 tsf* soundFile;
@@ -81,7 +81,7 @@ static void AudioCallback(void* data, Uint8* stream, int len)
     tsf_render_short(soundFile, (short*)stream, SampleCount, 0);
 }
 smf::MidiFile getMidiFileRoutine(std::string& fileName) {
-    smf::MidiFile newMidiFile   (fileName);
+    smf::MidiFile newMidiFile   ("./MIDIFILES/" + fileName);
     newMidiFile                 .doTimeAnalysis();
     newMidiFile                 .linkNotePairs();
     newMidiFile                 .joinTracks(); // we only care about 1 track right now
@@ -165,6 +165,28 @@ int playSongInputThread(MAPPER* keyMapper, DigitalPiano * digitalPiano) {
     return 0;
 }
 
+int listMidiFiles(DigitalPiano * digitalPiano) {
+
+    while (digitalPiano->midiTimer.flag != -1) {
+        const std::filesystem::path midiFiles{ "./MIDIFILES" };
+        digitalPiano->midiFileSet.clear();
+        for (auto const& dir_entry : std::filesystem::directory_iterator{ midiFiles })
+        {
+            std::string fileName = dir_entry
+                                    .path()
+                                    .generic_string();
+
+            fileName = fileName.substr(fileName.find_last_of("/") + 1);
+            if (fileName.substr(fileName.length() - 4) == ".mid" || fileName.substr(fileName.length() - 4) == ".MID") {
+                digitalPiano->midiFileSet.insert(fileName);
+            }
+        }
+        Sleep(1000);
+    }
+
+    return 0;
+}
+
 int noteAnalysis(NoteAnalyzer* noteAnalyzer) {
     return 0;
 }
@@ -205,6 +227,20 @@ void setUp() {
 }
 int main()
 {
+
+    //const std::filesystem::path midiFiles{ "./MIDIFILES" };
+    //for (auto const& dir_entry : std::filesystem::directory_iterator{ midiFiles })
+    //{
+    //    std::string fileName = dir_entry
+    //                           .path()
+    //                           .generic_string();
+
+    //    fileName             = fileName.substr(fileName.find_last_of("/") + 1);
+    //    if (fileName.substr(fileName.length() - 4) == ".mid") {
+    //        std::cout << fileName << '\n';
+    //    }
+    //}
+
     setUp                               ();
 
     MAPPER* keyMapper                   = new MAPPER();
@@ -216,11 +252,13 @@ int main()
     std::thread inputThreadObject       (inputThread, keyMapper);
     std::thread loadSongInputThread     (playSongInputThread, keyMapper, app);
     std::thread memoryManagementThread  (memoryManagement, app);
+    std::thread midiFileListeners       (listMidiFiles, app);
     
     guiThreadObject                     .join();
     inputThreadObject                   .join();
     loadSongInputThread                 .join();
     memoryManagementThread              .join();
+    midiFileListeners                   .join();
 
     delete keyMapper;
     delete soundFile;
