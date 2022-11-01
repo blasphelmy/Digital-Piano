@@ -216,7 +216,7 @@ void setUp() {
     OutputAudioSpec.channels    = 2;
     OutputAudioSpec.samples     = 1024;
     OutputAudioSpec.callback    = AudioCallback;
-    int dcbGain = 0;
+    int dcbGain                 = 0;
 
     SDL_AudioInit               (NULL);
     soundFile                   = tsf_load_filename("soundfile_1.sf2");
@@ -227,20 +227,6 @@ void setUp() {
 }
 int main()
 {
-
-    //const std::filesystem::path midiFiles{ "./MIDIFILES" };
-    //for (auto const& dir_entry : std::filesystem::directory_iterator{ midiFiles })
-    //{
-    //    std::string fileName = dir_entry
-    //                           .path()
-    //                           .generic_string();
-
-    //    fileName             = fileName.substr(fileName.find_last_of("/") + 1);
-    //    if (fileName.substr(fileName.length() - 4) == ".mid") {
-    //        std::cout << fileName << '\n';
-    //    }
-    //}
-
     setUp                               ();
 
     MAPPER* keyMapper                   = new MAPPER();
