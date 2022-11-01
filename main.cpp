@@ -208,7 +208,7 @@ void setUp() {
     _KEYSIZE                    = _WINDOW_H / 1.2272727273;
     _TEXT_SCALE                 = 1;
 
-    if (_WINDOW_W < 1080)       _TEXT_SCALE = 2;
+    //if (_WINDOW_W < 1080)       _TEXT_SCALE = 2;
 
     SDL_AudioSpec OutputAudioSpec;
     OutputAudioSpec.freq        = 32000;

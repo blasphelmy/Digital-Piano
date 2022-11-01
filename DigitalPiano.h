@@ -46,7 +46,7 @@ struct MidiTimer {
 class PIXELGAMEENGINE_EXT : public olc::PixelGameEngine {
 protected:
     struct horizontalLine { float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W; };
-protected :
+protected:
     void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color) {
         float radius = 4.f;
         if (size.y < 15) {
@@ -311,7 +311,7 @@ private:
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
             onscreenKey.position.y += timeOffset * 100.f * -1 * direction;
-            if (onscreenKey.position.y < _KEYSIZE)  reset.push(onscreenKey);
+            if (onscreenKey.position.y < _KEYSIZE) reset.push(onscreenKey);
         }
         for (int i = 0; i < keyMapper->keyMap.size(); i++) {
             keyMapper->keyMap[i].velocity = 0;
@@ -334,7 +334,7 @@ private:
     void drawFrame(double timeElasped) {
         keyMapper->threadLock.lock();
 
-        double yOffSet = timeElasped * 100.f;
+        double yOffSet = timeElasped * 100.f * midiTimer.speed;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
         timeAccumalator += timeElasped * midiTimer.speed;
