@@ -29,9 +29,9 @@ static void AudioCallback(void* data, Uint8* stream, int len) { int SampleCount 
 
 int guiRenderThread                 (DigitalPianoController * newPiano) { return newPiano->ConstructGUI(); }
 int createSongListenerThread        (DigitalPianoController * newPiano) { return newPiano->songCommandListener(); }
-int createMemoryManagementThread    (DigitalPianoController* newPiano) { return newPiano->memoryManagementThread(); }
-int ceateMidiInstrumentInputThread  (DigitalPianoController* newPiano) { return newPiano->MidiInputThread(); }
-int CreateMidiFileListenerThread    (DigitalPianoController* newPiano) { return newPiano->MidiFileListener(); }
+int createMemoryManagementThread    (DigitalPianoController * newPiano) { return newPiano->memoryManagementThread(); }
+int ceateMidiInstrumentInputThread  (DigitalPianoController * newPiano) { return newPiano->MidiInputThread(); }
+int CreateMidiFileListenerThread    (DigitalPianoController * newPiano) { return newPiano->MidiFileListener(); }
 
 void setUp() {
     //https://stackoverflow.com/questions/54912038/querying-windows-display-scaling
