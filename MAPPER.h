@@ -34,7 +34,7 @@ public:
     std::unordered_map<int, FlyingNotes* >  activelyDrawing;
     std::queue<FlyingNotes>                 onScreenNoteElements;
     std::queue<activeNotes>                 activeNotesPool;
-    tsf* soundFile = nullptr;
+    tsf* soundFile =                        nullptr;
     bool                                    pedal = false;
     std::mutex                              threadLock;
 
@@ -105,15 +105,15 @@ public:
             key k5(false, blackKeySize);
             k5.name = std::string("A");
 
-            k1.position = initialPos;
+            k1.position  = initialPos;
             initialPos.x = initialPos.x + slice;
-            k2.position = initialPos;
+            k2.position  = initialPos;
             initialPos.x = initialPos.x + (2 * slice);
-            k3.position = initialPos;
+            k3.position  = initialPos;
             initialPos.x = initialPos.x + slice;
-            k4.position = initialPos;
+            k4.position  = initialPos;
             initialPos.x = initialPos.x + slice;
-            k5.position = initialPos;
+            k5.position  = initialPos;
             initialPos.x = initialPos.x + (2 * slice);
 
             keyMap[y] = k1;
@@ -130,11 +130,11 @@ public:
 private:
     FlyingNotes* createFlyingNote(key thisKey) {
         FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
-        newFlyingNote->name = thisKey.name;
-        newFlyingNote->position = thisKey.position;
-        newFlyingNote->position.y = _KEYSIZE + (_KEYSIZE * .02f);
-        newFlyingNote->size = thisKey.size;
-        newFlyingNote->size.y = -1;
+        newFlyingNote->name         = thisKey.name;
+        newFlyingNote->position     = thisKey.position;
+        newFlyingNote->position.y   = _KEYSIZE + (_KEYSIZE * .02f);
+        newFlyingNote->size         = thisKey.size;
+        newFlyingNote->size.y       = -1;
         return newFlyingNote;
     }
 public:
