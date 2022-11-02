@@ -30,11 +30,11 @@ struct activeNotes {
 class MAPPER {
 public:
     std::array<key, 88>                     keyMap;
-    std::unordered_map<int, int>            keyIdMap;
+    std::unordered_map<int, int>            keyIdMap_PIANO;
     std::unordered_map<int, FlyingNotes* >  activelyDrawing;
     std::queue<FlyingNotes>                 onScreenNoteElements;
     std::queue<activeNotes>                 activeNotesPool;
-    tsf*                                    soundFile = nullptr;
+    tsf* soundFile = nullptr;
     bool                                    pedal = false;
     std::mutex                              threadLock;
 
@@ -49,7 +49,7 @@ public:
         std::string     abc = "ABCDEFG";
         olc::vd2d       initialPos(0, _KEYSIZE);
         olc::vd2d       offSet(slice, 0);
-        keyIdMap = {
+        keyIdMap_PIANO = {
             //white keys
             {0, 0},{2, 1},{3, 2},{5, 3},{7, 4},
             {8, 5},{10, 6},{12, 7},{14, 8},{15, 9},
@@ -88,7 +88,7 @@ public:
         //create first a# key
         key newKey(false, blackKeySize);
         newKey.name = std::string("A");
-        newKey.position = olc::vd2d(slice * .5 , _KEYSIZE);
+        newKey.position = olc::vd2d(slice * .5, _KEYSIZE);
         keyMap[i] = newKey;
         //create the subsequent groups of 5 black keys
         initialPos = olc::vd2d(slice * 2.5 + 3.f, _KEYSIZE);
@@ -105,18 +105,18 @@ public:
             key k5(false, blackKeySize);
             k5.name = std::string("A");
 
-            k1.position   = initialPos;
-            initialPos.x  = initialPos.x + slice;
-            k2.position   = initialPos;
-            initialPos.x  = initialPos.x + (2 * slice);
-            k3.position   = initialPos;
-            initialPos.x  = initialPos.x + slice;
-            k4.position   = initialPos;
-            initialPos.x  = initialPos.x + slice;
-            k5.position   = initialPos;
-            initialPos.x  = initialPos.x + (2 * slice);
+            k1.position = initialPos;
+            initialPos.x = initialPos.x + slice;
+            k2.position = initialPos;
+            initialPos.x = initialPos.x + (2 * slice);
+            k3.position = initialPos;
+            initialPos.x = initialPos.x + slice;
+            k4.position = initialPos;
+            initialPos.x = initialPos.x + slice;
+            k5.position = initialPos;
+            initialPos.x = initialPos.x + (2 * slice);
 
-            keyMap[y]     = k1;
+            keyMap[y] = k1;
             keyMap[y + 1] = k2;
             keyMap[y + 2] = k3;
             keyMap[y + 3] = k4;
@@ -127,7 +127,7 @@ public:
     ~MAPPER() {
 
     }
-private: 
+private:
     FlyingNotes* createFlyingNote(key thisKey) {
         FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
         newFlyingNote->name = thisKey.name;
@@ -145,7 +145,7 @@ public:
             activeNotes note = activeNotesPool.front();
             activeNotesPool.pop();
 
-            if (keyMap[keyIdMap[note.keyId]].velocity > 0) {
+            if (keyMap[keyIdMap_PIANO[note.keyId]].velocity > 0) {
                 newqueue.push(note);
             }
             else {
@@ -154,27 +154,28 @@ public:
         }
         activeNotesPool = newqueue;
     }
-    void setKeyState(int cat, int keyId, int velocity) {
+    void setKeyState_PIANO(int cat, int keyId, int velocity) {
         threadLock.lock();
-        if (cat == 144 || cat == 128) {
-            if (velocity != 0) {
-                tsf_note_on                 (soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
-                activeNotesPool            .push(activeNotes(0, keyId));
-                key thisKey                = keyMap[keyIdMap[keyId]];
+        if (cat >= 0x80 && cat < 0x8f) velocity = 0;
+        if (cat >= 0x80 && cat < 0x8f || cat >= 0x90 && cat < 0x9f) {
+            if (velocity != 0 && (cat >= 0x90 && cat < 0x9f)) {
+                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
+                activeNotesPool.push(activeNotes(0, keyId));
+                key thisKey = keyMap[keyIdMap_PIANO[keyId]];
                 FlyingNotes* newFlyingNote = createFlyingNote(thisKey);
-                activelyDrawing            .emplace(std::make_pair(keyIdMap[keyId], newFlyingNote));
+                activelyDrawing.emplace(std::make_pair(keyIdMap_PIANO[keyId], newFlyingNote));
             }
             else {
-                if (activelyDrawing.count(keyIdMap[keyId]) > 0) {
-                    onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap[keyId])->second));
-                    delete activelyDrawing.find(keyIdMap[keyId])->second;
+                if (activelyDrawing.count(keyIdMap_PIANO[keyId]) > 0) {
+                    onScreenNoteElements.push(*(activelyDrawing.find(keyIdMap_PIANO[keyId])->second));
+                    delete activelyDrawing.find(keyIdMap_PIANO[keyId])->second;
                 }
-                if(keyMap[keyIdMap[keyId]].velocity > 0) 
-                    activelyDrawing.erase(keyIdMap[keyId]);
-                if (!pedal) 
+                if (keyMap[keyIdMap_PIANO[keyId]].velocity > 0)
+                    activelyDrawing.erase(keyIdMap_PIANO[keyId]);
+                if (!pedal)
                     tsf_note_off(soundFile, 0, keyId + 21);
             }
-            keyMap[keyIdMap[keyId]].velocity = velocity;
+            keyMap[keyIdMap_PIANO[keyId]].velocity = velocity;
         }
         else {
             //std::cout << "pedal switched" << std::endl;

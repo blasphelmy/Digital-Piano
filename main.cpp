@@ -28,7 +28,7 @@ tsf* soundFile;
 static void finish(int ignore) { done = true; }
 
 int memoryManagement(DigitalPiano* digitalPiano) {
-    MAPPER* keyMapper = digitalPiano->keyMapper;
+    MAPPER* keyMapper = digitalPiano->returnMapper();
     while (digitalPiano->midiTimer.flag != -1) {
         if (keyMapper->activeNotesPool.size() > 12) {
             keyMapper->threadLock.lock();
@@ -67,7 +67,7 @@ int inputThread(MAPPER * keyMapper) {
         nBytes = message.size();
         if (nBytes > 1) {
             //144 keys 176 pedals
-            keyMapper->setKeyState((int)message[0],(int)message[1] - 21, (int)message[2]);
+            keyMapper->setKeyState_PIANO((int)message[0],(int)message[1] - 21, (int)message[2]);
         }   
         //Sleep(1);
     }
@@ -85,7 +85,6 @@ smf::MidiFile getMidiFileRoutine(std::string& fileName) {
     newMidiFile                 .doTimeAnalysis();
     newMidiFile                 .linkNotePairs();
     newMidiFile                 .joinTracks(); // we only care about 1 track right now
-
     return newMidiFile;
 }
 bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPiano) {
@@ -93,21 +92,13 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
     bool action                 = false;
     smf::MidiFile midifile      = getMidiFileRoutine(fileName);
     MidiTimer &midiTimer        = digitalPiano->midiTimer;
-    midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds() 
-                                / midifile.getFileDurationInTicks() 
-                                * midifile.getTicksPerQuarterNote();
-
-    midiTimer.duration          = midifile.getFileDurationInSeconds();
-    midiTimer.fileName          = midifile.getFilename();
-    midiTimer.start             = std::chrono::high_resolution_clock::now();
-    digitalPiano                ->playSignal();
+    digitalPiano->              playSignal(midifile);
     smf::MidiEvent event;
-    if (midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
-    
-    while (midiTimer.index < midifile[0].size() 
-       && !done 
+
+    while (midiTimer.index < midifile[0].size()
+        && !done
         && midiTimer.flag != -1) {
-       
+
         action = true;
         midiTimer.tick();
         while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
@@ -123,8 +114,8 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
             }
         }
 
-        while (midiTimer.flag == 2 
-            && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) 
+        while (midiTimer.flag == 2
+            && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart)
         {
             midiTimer.index++;
             if (midiTimer.index > midifile[0].size() - 1) {
@@ -137,16 +128,16 @@ bool playMidi(MAPPER* keyMapper, std::string& fileName, DigitalPiano* digitalPia
                 break;
             }
         }
-        while ( midiTimer.index < midifile[0].size() 
-             && midiTimer.flag == 0 
-             && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart) 
+        while (midiTimer.index < midifile[0].size()
+            && midiTimer.flag == 0
+            && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart)
         {
             event = midifile[0][midiTimer.index];
-            
+
             //ignore pedals when playing midi file.
-            if(/*(int)event[0] == 176 || */(int)event[0] == 144 || (int)event[0] == 128)
-                keyMapper->setKeyState((int)event[0], (int)event[1] - 21, (int)event[2]);
-            
+            if (event[0] >= 0x80 && event[0] < 0x8f || event[0] >= 0x90 && event[0] < 0x9f)
+                keyMapper->setKeyState_PIANO((int)event[0], (int)event[1] - 21, (int)event[2]);
+
             midiTimer.index++;
         }
     }

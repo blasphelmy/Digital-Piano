@@ -19,10 +19,15 @@
 #include <mutex>
 #include <set>
 
-struct MidiTimer {
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
+class MidiTimer {
+public : 
     //chrono library is so verbose.
-    std::chrono::high_resolution_clock::time_point  start;
-    std::chrono::high_resolution_clock::time_point  finish;
+    high_resolution_clock::time_point  start;
+    high_resolution_clock::time_point  finish;
     int flag                 = 0;
     int index                = 0;
     long long timeSinceStart = 0.0;
@@ -33,13 +38,15 @@ struct MidiTimer {
     bool isPlaying           = false;
     std::mutex midiLock;
     void tick() {
-        Sleep                (1);
-        if (speed > 3) speed = 3;
-        if (speed < 0) speed = 0;
-        this->finish         = std::chrono::high_resolution_clock::now();
-        this->timeSinceStart = (this->timeSinceStart 
-                             + (std::chrono::duration_cast<std::chrono::milliseconds>(this->finish - this->start).count() * this->speed));
-        this->start          = std::chrono::high_resolution_clock::now();
+        Sleep                   (1);
+        if (speed > 3) speed    = 3.0f;
+        if (speed < 0) speed    = 0.0f;
+        this->finish            = high_resolution_clock::now();
+        this->timeSinceStart    = (this->timeSinceStart 
+                                + (duration_cast<milliseconds>
+                                    (this->finish - this->start).count() * this->speed)
+                                  );
+        this->start             = high_resolution_clock::now();
     }
 };
 
@@ -76,8 +83,11 @@ public:
     }
     ~DigitalPiano() {
     }
-public:
+private:
     MAPPER* keyMapper = nullptr;
+public:
+    MAPPER* returnMapper() { return keyMapper; };
+public:
     MidiTimer midiTimer;
     std::set<std::string> midiFileSet;
 private:
@@ -100,11 +110,22 @@ public:
     void connectMapper(MAPPER* newMapper) {
         keyMapper = newMapper;
     }
-    void playSignal() {
-        midiTimer.index             = 0;
+    void playSignal(smf::MidiFile & midifile) {
+        midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds()
+                                    / midifile.getFileDurationInTicks()
+                                    * midifile.getTicksPerQuarterNote();
+
+        midiTimer.duration          = midifile.getFileDurationInSeconds();
+        midiTimer.fileName          = midifile.getFilename();
+
         midiTimer.timeSinceStart    = 0.0;
         timeAccumalator             = 0.f;
         keyMapper->pedal            = true;
+        
+        if (midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
+
+        midiTimer.index             = 0;
+        midiTimer.start             = high_resolution_clock::now();
     }
     void reset() {
         tsf_note_off_all            (keyMapper->soundFile);
