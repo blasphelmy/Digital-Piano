@@ -1987,6 +1987,7 @@ namespace olc
 
 	HWButton PixelGameEngine::GetMouse(uint32_t b) const
 	{
+		auto mouseState = pMouseState;
 		return pMouseState[b];
 	}
 

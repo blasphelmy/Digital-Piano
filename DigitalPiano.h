@@ -23,8 +23,7 @@ using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
 
-class MidiTimer {
-public : 
+struct MidiTimer {
     //chrono library is so verbose.
     high_resolution_clock::time_point  start;
     high_resolution_clock::time_point  finish;
@@ -87,6 +86,9 @@ private:
     MAPPER* keyMapper = nullptr;
 public:
     MAPPER* returnMapper() { return keyMapper; };
+    void connectMapper(MAPPER* newMapper) {
+        keyMapper = newMapper;
+    }
 public:
     MidiTimer midiTimer;
     std::set<std::string> midiFileSet;
@@ -105,11 +107,7 @@ private:
     ProgressBar                               progressBar;
     float                                     timeAccumalator = 500.f;
     float                                     targetBPM = 1.5f;
-
 public:
-    void connectMapper(MAPPER* newMapper) {
-        keyMapper = newMapper;
-    }
     void playSignal(smf::MidiFile & midifile) {
         midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds()
                                     / midifile.getFileDurationInTicks()
@@ -145,6 +143,7 @@ private:
         return true;
     }
     bool OnUserUpdate(float felaspedTime) override {
+        
         keyListeners();
         Clear(olc::Pixel(40, 40, 40));
         drawFrame(felaspedTime);
@@ -156,8 +155,128 @@ private:
         midiTimer.flag = -1;
         return true;
     }
-
 private:
+    void SeekRoutine(int direction, float timeOffset) {
+        midiTimer.timeSinceStart += timeOffset * direction;
+        std::queue<FlyingNotes> reset;
+        /*       std::queue<horizontalLine> reset;*/
+        keyMapper->threadLock.lock();
+        while (!keyMapper->onScreenNoteElements.empty()) {
+            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
+            keyMapper->onScreenNoteElements.pop();
+            onscreenKey.position.y -= timeOffset / 10.f * direction;
+            if (onscreenKey.position.y < _KEYSIZE) reset.push(onscreenKey);
+        }
+        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
+            keyMapper->keyMap[i].velocity = 0;
+            if (keyMapper->activelyDrawing.count(i) > 0) keyMapper->activelyDrawing.erase(i);
+        }
+        while (!scrollingLines.empty()) {
+            scrollingLines.pop();
+        }
+        keyMapper->onScreenNoteElements = reset;
+        keyMapper->threadLock.unlock();
+    }
+
+    void fillInGhost() {
+        olc::vd2d mousePOS = GetMousePos();
+        FillRect(olc::vd2d(0.f, 0.f), olc::vi2d(mousePOS.x, 20.f), olc::BLUE);
+        progressBar.progressBar = olc::vd2d(mousePOS.x, 20.f);
+    }
+    void fillInSeekRoutine() {
+        olc::vd2d mousePOS = GetMousePos();
+        long long newTimeSinceStart = (mousePOS.x / _WINDOW_W) * midiTimer.duration * 1000.f;
+        if (newTimeSinceStart < midiTimer.timeSinceStart) {
+            midiTimer.midiLock.lock();
+            midiTimer.flag = 1;
+            SeekRoutine(-1, (midiTimer.timeSinceStart - newTimeSinceStart));
+            midiTimer.midiLock.unlock();
+        }
+        else {
+            midiTimer.midiLock.lock();
+            midiTimer.flag = 2;
+            SeekRoutine(1, (newTimeSinceStart - midiTimer.timeSinceStart));
+            midiTimer.midiLock.unlock();
+        }
+
+    }
+
+    olc::Pixel getColor(bool isWhite, int velocity, std::string& note) {
+        if (isWhite) return velocity == 0 ? olc::Pixel(210, 210, 210) : getDrawingColor(isWhite, note);
+        return velocity == 0 ? olc::Pixel(25, 25, 25) : getDrawingColor(isWhite, note);
+    }
+    olc::Pixel getDrawingColor(bool isWhite, std::string& note) {
+        vector3f darkMask(isWhite ? .8 : .6);
+        vector3i color = colorMap[note];
+        color = color * darkMask;
+        return olc::Pixel(color.x, color.y, color.z);
+    }
+
+    void drawData() {
+        DrawString(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
+        DrawString(10, 50, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
+        int i = 0;
+        for (std::string fileName : midiFileSet) {
+            DrawString(10, 70 + (i++ * 20), fileName, olc::YELLOW, _TEXT_SCALE);
+        }
+    }
+    void drawFrame(double timeElasped) {
+        keyMapper->threadLock.lock();
+
+        double yOffSet = timeElasped * 100.f * midiTimer.speed;
+        std::queue<FlyingNotes> newOnScreenElementsQueue;
+        std::queue<horizontalLine> newHorizontalLinesQueue;
+        timeAccumalator += timeElasped * midiTimer.speed;
+
+        if (timeAccumalator > midiTimer.qNotePerSec) {
+            timeAccumalator = 0.f;
+            scrollingLines.push(horizontalLine());
+        }
+
+        while (!scrollingLines.empty()) {
+            horizontalLine line = scrollingLines.front();
+            scrollingLines.pop();
+            DrawLine(olc::vd2d(line.left, line.y), olc::vd2d(line.right, line.y), olc::Pixel(50, 50, 50));
+            line.y -= yOffSet;
+            if (line.y > 0) newHorizontalLinesQueue.push(line);
+        }
+        scrollingLines = newHorizontalLinesQueue;
+
+        while (!keyMapper->onScreenNoteElements.empty()) {
+
+            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
+            keyMapper->onScreenNoteElements.pop();
+
+            FillRoundedRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
+            onscreenKey.position.y -= yOffSet;
+
+            if (onscreenKey.position.y + onscreenKey.size.y + 12.0 > 0)
+                newOnScreenElementsQueue.push(onscreenKey);
+        }
+        keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
+        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
+            if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
+            if (keyMapper->activelyDrawing.count(i) > 0) {
+                key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
+                FillRoundedRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite, drawnKey->name));
+                drawnKey->size.y += yOffSet;
+                drawnKey->position.y -= yOffSet;
+            }
+
+            key thisKey = keyMapper->keyMap[i];
+
+            if (thisKey.isWhite) {
+                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
+            }
+            else {
+                FillRoundedRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
+            }
+
+        }
+        keyMapper->threadLock.unlock();
+        ProcessBarEvents();
+        DrawString(10, 7, std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 1);
+    }
 
     void keyListeners() {
         if (GetKey(olc::Key::LEFT).bPressed) {
@@ -176,10 +295,10 @@ private:
             midiTimer.speed = (midiTimer.speed > 0 ? 0.0 : 1.0);
         }
         if (GetKey(olc::Key::UP).bPressed) {
-            midiTimer.speed = midiTimer.speed + .1;
+            midiTimer.speed = midiTimer.speed + .1f;
         }
         if (GetKey(olc::Key::DOWN).bPressed) {
-            midiTimer.speed = midiTimer.speed - .1;
+            midiTimer.speed = midiTimer.speed - .1f;
         }
         if (!midiTimer.isPlaying && GetKey(olc::SHIFT).bHeld) {
             if (GetKey(olc::A).bPressed) {
@@ -306,112 +425,174 @@ private:
             }
         }
     }
-    void drawData() {
-        DrawString(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
-        //DrawString(10, 50, "Options : clairedelune.mid | mozartk545.mid | arab2.mid ", olc::YELLOW, _TEXT_SCALE);
-        //DrawString(10, 70, "blackkeys.mid | pokeCredits.mid | theEnd.mid | cianwood.mid", olc::YELLOW, _TEXT_SCALE);
-        DrawString(10, 50, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
-        //DrawString(10, 120, "Time (forward/back) keys : " + std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, _TEXT_SCALE);
-        //DrawString(10, 145, "Active voices : " + std::to_string(tsf_active_voice_count(keyMapper->soundFile)), olc::WHITE, _TEXT_SCALE);
-        //DrawString(10, 170, "ActiveNotes Size : " + std::to_string(keyMapper->activeNotesPool.size()), olc::WHITE, _TEXT_SCALE);
-        int i = 0;
-        for (std::string fileName : midiFileSet) {
-            DrawString(10, 70 + (i++ * 20), fileName, olc::YELLOW, _TEXT_SCALE);
-        }
-    }
-    void SeekRoutine(int direction, float timeOffset) {
-        if (direction == -1) {
-            midiTimer.timeSinceStart -= timeOffset;
-        }
-        else {
-            midiTimer.timeSinceStart += timeOffset;
-        }
-        std::queue<FlyingNotes> reset;
-        keyMapper->threadLock.lock();
-        while (!keyMapper->onScreenNoteElements.empty()) {
-            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
-            keyMapper->onScreenNoteElements.pop();
-            onscreenKey.position.y += timeOffset * 100.f * -1 * direction;
-            if (onscreenKey.position.y < _KEYSIZE) reset.push(onscreenKey);
-        }
-        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-            keyMapper->keyMap[i].velocity = 0;
-            if (keyMapper->activelyDrawing.count(i) > 0) keyMapper->activelyDrawing.erase(i);
-        }
-        keyMapper->onScreenNoteElements = reset;
-        keyMapper->threadLock.unlock();
-    }
-
-    olc::Pixel getColor(bool isWhite, int velocity, std::string& note) {
-        if (isWhite) return velocity == 0 ? olc::Pixel(210, 210, 210) : getDrawingColor(isWhite, note);
-        return velocity == 0 ? olc::Pixel(25, 25, 25) : getDrawingColor(isWhite, note);
-    }
-    olc::Pixel getDrawingColor(bool isWhite, std::string& note) {
-        vector3f darkMask(isWhite ? .8 : .6);
-        vector3i color = colorMap[note];
-        color = color * darkMask;
-        return olc::Pixel(color.x, color.y, color.z);
-    }
-    void drawFrame(double timeElasped) {
-        keyMapper->threadLock.lock();
-
-        double yOffSet = timeElasped * 100.f * midiTimer.speed;
-        std::queue<FlyingNotes> newOnScreenElementsQueue;
-        std::queue<horizontalLine> newHorizontalLinesQueue;
-        timeAccumalator += timeElasped * midiTimer.speed;
-
-        if (timeAccumalator > midiTimer.qNotePerSec) {
-            timeAccumalator = 0.f;
-            scrollingLines.push(horizontalLine());
-        }
-
-        while (!scrollingLines.empty()) {
-            horizontalLine line = scrollingLines.front();
-            scrollingLines.pop();
-            DrawLine(olc::vd2d(line.left, line.y), olc::vd2d(line.right, line.y), olc::Pixel(50, 50, 50));
-            line.y -= yOffSet;
-            if (line.y > 0) newHorizontalLinesQueue.push(line);
-        }
-        scrollingLines = newHorizontalLinesQueue;
-
-        while (!keyMapper->onScreenNoteElements.empty()) {
-
-            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
-            keyMapper->onScreenNoteElements.pop();
-
-            FillRoundedRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
-            onscreenKey.position.y -= yOffSet;
-
-            if (onscreenKey.position.y + onscreenKey.size.y + 12.0 > 0)
-                newOnScreenElementsQueue.push(onscreenKey);
-        }
-        keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
-        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-            if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
-            if (keyMapper->activelyDrawing.count(i) > 0) {
-                key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                FillRoundedRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite, drawnKey->name));
-                drawnKey->size.y += yOffSet;
-                drawnKey->position.y -= yOffSet;
-            }
-
-            key thisKey = keyMapper->keyMap[i];
-
-            if (thisKey.isWhite) {
-                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
-            }
-            else {
-                FillRoundedRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
-            }
-
-        }
-        keyMapper->threadLock.unlock();
+    
+    void ProcessBarEvents() {
         progressBar.setProgressBar(midiTimer.timeSinceStart / 1000.f, midiTimer.duration);
-        FillRect(progressBar.pos, progressBar.bg, olc::DARK_GREY);
+        FillRect(progressBar.pos, progressBar.bg, olc::Pixel(45, 45, 45));
         FillRect(progressBar.pos, progressBar.progressBar, progressBar.fillColor);
-        DrawString(10, 7, std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 1);
+        
+        olc::vi2d mousePOS = GetMousePos();
+        if (mousePOS.y < progressBar.progressBar.y && GetMouse(olc::Mouse::LEFT).bHeld) fillInGhost();
+        if (mousePOS.y < progressBar.progressBar.y && GetMouse(olc::Mouse::LEFT).bReleased) fillInSeekRoutine();
     }
 };
+
+
+class DigitalPianoController {
+public:
+    DigitalPiano* digitalPiano = nullptr;
+    MAPPER* keyMapper          = nullptr;
+    tsf* soundfile             = nullptr;
+public:
+    DigitalPianoController(DigitalPiano * newDigitalPiano, MAPPER* newKeyMapper, tsf * soundfile) {
+        this->digitalPiano = newDigitalPiano;
+        this->keyMapper    = newKeyMapper;
+        this->soundfile    = soundfile;
+    }
+private: 
+    smf::MidiFile getMidiFileRoutine(std::string& fileName) {
+        smf::MidiFile newMidiFile("./MIDIFILES/" + fileName);
+        newMidiFile.doTimeAnalysis();
+        newMidiFile.linkNotePairs();
+        newMidiFile.joinTracks(); // we only care about 1 track right now
+        return newMidiFile;
+    }
+    bool playMidi(std::string& fileName) {
+
+        bool action = false;
+        smf::MidiFile midifile = getMidiFileRoutine(fileName);
+        MidiTimer& midiTimer = digitalPiano->midiTimer;
+        digitalPiano->playSignal(midifile);
+        smf::MidiEvent event;
+
+        while (midiTimer.index < midifile[0].size()
+            && midiTimer.flag != -1) {
+
+            action = true;
+            midiTimer.tick();
+            while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * 1000.f >= midiTimer.timeSinceStart) {
+                midiTimer.index--;
+                if (midiTimer.index < 0) {
+                    midiTimer.index = 0;
+                    midiTimer.flag = 0;
+                    break;
+                }
+                if (midifile[0][midiTimer.index].seconds * 1000.f < midiTimer.timeSinceStart) {
+                    midiTimer.flag = 0;
+                    break;
+                }
+            }
+
+            while (midiTimer.flag == 2
+                && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart)
+            {
+                midiTimer.index++;
+                if (midiTimer.index > midifile[0].size() - 1) {
+                    midiTimer.index = midifile[0].size() - 1;
+                    midiTimer.flag = 0;
+                    break;
+                }
+                if (midifile[0][midiTimer.index].seconds * 1000.f > midiTimer.timeSinceStart) {
+                    midiTimer.flag = 0;
+                    break;
+                }
+            }
+            while (midiTimer.index < midifile[0].size()
+                && midiTimer.flag == 0
+                && midifile[0][midiTimer.index].seconds * 1000.f <= midiTimer.timeSinceStart)
+            {
+                event = midifile[0][midiTimer.index];
+
+                //ignore pedals when playing midi file.
+                if (event[0] >= 0x80 && event[0] < 0x8f || event[0] >= 0x90 && event[0] < 0x9f)
+                    keyMapper->setKeyState_PIANO((int)event[0], (int)event[1] - 21, (int)event[2]);
+
+                midiTimer.index++;
+            }
+        }
+        digitalPiano->reset();
+        return action;
+    }
+    static void finish(int ignore) { }
+public: 
+    int ConstructGUI() {
+        digitalPiano->connectMapper(keyMapper);
+        if (digitalPiano->Construct(_WINDOW_W, _WINDOW_H, 1, 1))
+            digitalPiano->Start();
+        return 0;
+    }
+    int songCommandListener() {
+        std::string selection;
+        do {
+            if (digitalPiano->midiTimer.isPlaying) {
+                playMidi(digitalPiano->midiTimer.fileName);
+            }
+            Sleep(10);
+        } while (digitalPiano->midiTimer.flag != -1);
+        return 0;
+    }
+    int memoryManagementThread() {
+        while (digitalPiano->midiTimer.flag != -1) {
+            if (keyMapper->activeNotesPool.size() > 12) {
+                keyMapper->threadLock.lock();
+                tsf_note_off(soundfile, 0, keyMapper->activeNotesPool.front().keyId + 21);
+                keyMapper->activeNotesPool.pop();
+                keyMapper->threadLock.unlock();
+            }
+        }
+        return 0;
+    }
+    int MidiInputThread() {
+        RtMidiIn* midiin = new RtMidiIn();
+        std::vector<unsigned char> message;
+        int nBytes, i;
+        double stamp;
+        unsigned int nPorts = midiin->getPortCount();
+
+        if (nPorts == 0) {
+            goto cleanup;
+        }
+        midiin->openPort(0);
+        midiin->ignoreTypes(false, false, false);
+        (void)signal(SIGINT, finish);
+
+        while (digitalPiano->midiTimer.flag != -1) {
+            stamp = midiin->getMessage(&message);
+            nBytes = message.size();
+            if (nBytes > 1) {
+                //144 keys 176 pedals
+                keyMapper->setKeyState_PIANO((int)message[0], (int)message[1] - 21, (int)message[2]);
+            }
+            //Sleep(1);
+        }
+    cleanup:
+        delete midiin;
+        return 0;
+    }
+    int MidiFileListener() {
+
+        while (digitalPiano->midiTimer.flag != -1) {
+            const std::filesystem::path midiFiles{ "./MIDIFILES" };
+            digitalPiano->midiFileSet.clear();
+            for (auto const& dir_entry : std::filesystem::directory_iterator{ midiFiles })
+            {
+                std::string fileName = dir_entry
+                    .path()
+                    .generic_string();
+
+                fileName = fileName.substr(fileName.find_last_of("/") + 1);
+                if (fileName.substr(fileName.length() - 4) == ".mid" || fileName.substr(fileName.length() - 4) == ".MID") {
+                    digitalPiano->midiFileSet.insert(fileName);
+                }
+            }
+            Sleep(1000);
+        }
+
+        return 0;
+    }
+};
+
+
 class NoteAnalyzer {
 public:
     NoteAnalyzer(DigitalPiano* app) {

@@ -39,7 +39,8 @@ public:
     std::mutex                              threadLock;
 
 public:
-    MAPPER() {
+    MAPPER(tsf * soundFile) {
+        this->soundFile = soundFile;
         //set up white keys
         //index 0-51 : white keys
         //index 52-87 : black keys
