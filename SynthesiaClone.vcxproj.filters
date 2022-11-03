@@ -44,7 +44,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="key.h">
+    <ClInclude Include="Keys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MAPPER.h">

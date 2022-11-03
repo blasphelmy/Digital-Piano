@@ -158,7 +158,7 @@
     <ClInclude Include="GLOBALVARIABLES.h" />
     <ClInclude Include="include\MidiFile.h" />
     <ClInclude Include="include\Options.h" />
-    <ClInclude Include="key.h" />
+    <ClInclude Include="Keys.h" />
     <ClInclude Include="MAPPER.h" />
     <ClInclude Include="minisdl_audio.h" />
     <ClInclude Include="olcPixelGameEngineGL.h" />

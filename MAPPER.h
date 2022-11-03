@@ -7,7 +7,7 @@
 #include "RtMidi.h"
 #include "Options.h"
 #include "DigitalPiano.h"
-#include "key.h"
+#include "Keys.h"
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
@@ -130,13 +130,7 @@ public:
     }
 private:
     FlyingNotes* createFlyingNote(key thisKey) {
-        FlyingNotes* newFlyingNote = new FlyingNotes(thisKey.isWhite);
-        newFlyingNote->name         = thisKey.name;
-        newFlyingNote->position     = thisKey.position;
-        newFlyingNote->position.y   = _KEYSIZE + (_KEYSIZE * .02f);
-        newFlyingNote->size         = thisKey.size;
-        newFlyingNote->size.y       = -1;
-        return newFlyingNote;
+        return new FlyingNotes(thisKey);
     }
 public:
     void flushActiveNotes() {

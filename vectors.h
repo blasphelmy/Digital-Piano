@@ -7,7 +7,7 @@
 #include "Options.h"
 #include "DigitalPiano.h"
 #include "MAPPER.h"
-#include "key.h"
+#include "Keys.h"
 #include <iostream>
 #include <chrono>
 #include <signal.h>

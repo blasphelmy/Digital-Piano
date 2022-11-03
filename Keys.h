@@ -6,7 +6,6 @@
 #include "MidiFile.h"
 #include "RtMidi.h"
 #include "Options.h"
-#include "DigitalPiano.h"
 #include "MAPPER.h"
 #include "vectors.h"
 #include <iostream>
@@ -17,6 +16,12 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
+#include <set>
+
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 class key {
 public:
     olc::vd2d   position;
@@ -70,7 +75,14 @@ public:
 
 class FlyingNotes : public key {
 public:
-    using key::key;
+    FlyingNotes(key & Key) {
+        this->name = Key.name;
+        this->position = Key.position;
+        this->position.y = _KEYSIZE + (_KEYSIZE * .02f);
+        this->size = Key.size;
+        this->size.y = -1;
+    }
+public:
     vector3i color;
     double duration = 0.0f;
     void addDuration(double dur) {
