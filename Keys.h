@@ -24,6 +24,7 @@ using std::chrono::milliseconds;
 
 class key {
 public:
+    char        channel = 0x00;
     olc::vd2d   position;
     olc::vd2d   size;
     std::string name;
@@ -75,20 +76,22 @@ public:
 
 class FlyingNotes : public key {
 public:
-    FlyingNotes(key & Key) {
+    FlyingNotes(key & Key, short channel) {
         this->name = Key.name;
         this->position = Key.position;
         this->position.y = _KEYSIZE + (_KEYSIZE * .02f);
         this->size = Key.size;
         this->size.y = -1;
+        this->channel = channel;
     }
 public:
-    vector3i color;
-    double duration = 0.0f;
-    void addDuration(double dur) {
-        duration += dur;
-    }
-    void resetDuration() {
-        duration = 0.0f;
-    }
+    vector3i    color;
+    double      duration = 0.0f;
+//public:
+//    void addDuration(double dur) {
+//        duration += dur;
+//    }
+//    void resetDuration() {
+//        duration = 0.0f;
+//    }
 };

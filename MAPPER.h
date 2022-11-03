@@ -129,8 +129,8 @@ public:
 
     }
 private:
-    FlyingNotes* createFlyingNote(key thisKey) {
-        return new FlyingNotes(thisKey);
+    FlyingNotes* createFlyingNote(key thisKey, short channel) {
+        return new FlyingNotes(thisKey, channel);
     }
 public:
     void flushActiveNotes() {
@@ -149,15 +149,15 @@ public:
         }
         activeNotesPool = newqueue;
     }
-    void setKeyState_PIANO(int cat, int keyId, int velocity) {
+    void setKeyState_PIANO(int cat, int keyId, int velocity, bool channelOn) {
         threadLock.lock();
         if (cat >= 0x80 && cat < 0x8f) velocity = 0;
         if (cat >= 0x80 && cat < 0x8f || cat >= 0x90 && cat < 0x9f) {
             if (velocity != 0 && (cat >= 0x90 && cat < 0x9f)) {
-                tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
+                if(channelOn) tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
                 activeNotesPool.push(activeNotes(0, keyId));
                 key thisKey = keyMap[keyIdMap_PIANO[keyId]];
-                FlyingNotes* newFlyingNote = createFlyingNote(thisKey);
+                FlyingNotes* newFlyingNote = createFlyingNote(thisKey, (short)cat & 0x0f);
                 activelyDrawing.emplace(std::make_pair(keyIdMap_PIANO[keyId], newFlyingNote));
             }
             else {

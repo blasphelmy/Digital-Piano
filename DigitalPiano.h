@@ -31,10 +31,10 @@ struct channel {
             if (mousePos.x > pos.x && mousePos.y > pos.y && mousePos.y < pos.y + 13) {
                 if (parent->GetMouse(olc::Mouse::LEFT).bPressed) {
                     MUTED = MUTED ? false : true;
-                    keyMapper->activelyDrawing.clear();
+                    /*keyMapper->activelyDrawing.clear();
                     for (int j = 0; j < 88; j++) {
                         keyMapper->keyMap[j].velocity = 0;
-                    }
+                    }*/
                 }
                 color = olc::CYAN;
             }
@@ -60,6 +60,10 @@ public:
     bool checkChannel(smf::MidiEvent & event) {
         short maskedChannel = (short)event[0] & mask;
         if (channels[(short)maskedChannel].ACTIVE && !channels[(short)maskedChannel].MUTED) return true;
+        return false;
+    }
+    bool checkChannel(short channel) {
+        if (channels[(short)channel].ACTIVE && !channels[(short)channel].MUTED) return true;
         return false;
     }
     bool setChannels(smf::MidiFile& file) {
@@ -124,7 +128,7 @@ public:
 
         FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 1.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
         FillRect(olc::vd2d(innerRect_pos.x + innerRect.x - 1.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
-
+        
         FillCircle(innerRect_pos, radius, color);
         FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 2.f), radius, color);
         FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y + innerRect.y - 2.f), radius, color);
@@ -251,7 +255,7 @@ private:
 
     void fillInGhost() {
         olc::vd2d mousePOS = GetMousePos();
-        FillRect(olc::vd2d(0.f, 0.f), olc::vi2d(mousePOS.x, 20.f), olc::BLUE);
+        FillRectDecal(olc::vd2d(0.f, 0.f), olc::vi2d(mousePOS.x, 20.f), olc::Pixel(45, 122, 142, 150));
         progressBar.progressBar = olc::vd2d(mousePOS.x, 20.f);
     }
     void fillInSeekRoutine() {
@@ -298,6 +302,24 @@ private:
             i = midiTimer.Channels.channels[j].drawSelf(this, keyMapper, i);
         }
     }
+    void drawFlyingNote(FlyingNotes* note) {
+        olc::Pixel color = getDrawingColor(note->isWhite, note->name);
+        vector3i colorVector(color.r, color.g, color.b);
+        if (!midiTimer.Channels.checkChannel(note->channel)) {
+            colorVector = colorVector * vector3f(.3);
+        }
+        FillRoundedRect(note->position, note->size - olc::vd2d(1, 1), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
+        DrawString(note->position + olc::vd2d(1, 1), std::to_string(note->channel), olc::Pixel(255, 255, 255, 150));
+    }
+    void drawFlyingNote(FlyingNotes& note) {
+        olc::Pixel color = getDrawingColor(note.isWhite, note.name);
+        vector3i colorVector(color.r, color.g, color.b);
+        if (!midiTimer.Channels.checkChannel(note.channel)) {
+            colorVector = colorVector * vector3f(.3);
+        }
+        FillRoundedRect(note.position, note.size - olc::vd2d(1, 1), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
+        DrawStringDecal(note.position + olc::vd2d(1, 1), std::to_string(note.channel), olc::Pixel(255, 255, 255, 150));
+    }
     void drawFrame(double timeElasped) {
         keyMapper->threadLock.lock();
 
@@ -322,7 +344,7 @@ private:
 
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
-            FillRoundedRect(onscreenKey.position, onscreenKey.size - olc::vd2d(1, 1), getDrawingColor(onscreenKey.isWhite, onscreenKey.name));
+            drawFlyingNote(onscreenKey);
             onscreenKey.position.y -= yOffSet;
             if (onscreenKey.position.y + onscreenKey.size.y > 0)
                 newOnScreenElementsQueue.push(onscreenKey);
@@ -331,8 +353,8 @@ private:
         for (int i = 0; i < keyMapper->keyMap.size(); i++) {
             if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
             if (keyMapper->activelyDrawing.count(i) > 0) {
-                key* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                FillRoundedRect(drawnKey->position, drawnKey->size - olc::vd2d(1, 1), getDrawingColor(drawnKey->isWhite, drawnKey->name));
+                FlyingNotes* drawnKey = keyMapper->activelyDrawing.find(i)->second;
+                drawFlyingNote(drawnKey);
                 drawnKey->size.y += yOffSet;
                 drawnKey->position.y -= yOffSet;
             }
@@ -350,7 +372,7 @@ private:
         drawChannels();
         keyMapper->threadLock.unlock();
         ProcessBarEvents();
-        DrawString(10, 7, std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 1);
+        DrawStringDecal(olc::vd2d(10, 7), std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
     }
 
     void keyListeners() {
@@ -503,12 +525,12 @@ private:
     
     void ProcessBarEvents() {
         progressBar.setProgressBar(midiTimer.timeSinceStart / 1000.f, midiTimer.duration);
-        FillRect(progressBar.pos, progressBar.bg, olc::Pixel(45, 45, 45));
-        FillRect(progressBar.pos, progressBar.progressBar, progressBar.fillColor);
+        FillRectDecal(progressBar.pos, progressBar.bg, olc::Pixel(45, 45, 45));
+        FillRectDecal(progressBar.pos, progressBar.progressBar, progressBar.fillColor);
         
         olc::vi2d mousePOS = GetMousePos();
-        if (mousePOS.y < progressBar.progressBar.y && GetMouse(olc::Mouse::LEFT).bHeld) fillInGhost();
-        if (mousePOS.y < progressBar.progressBar.y && GetMouse(olc::Mouse::LEFT).bReleased) fillInSeekRoutine();
+        if (mousePOS.y < progressBar.progressBar.y/* && GetMouse(olc::Mouse::LEFT).bHeld*/) fillInGhost();
+        if (mousePOS.y < progressBar.progressBar.y && GetMouse(olc::Mouse::LEFT).bPressed) fillInSeekRoutine();
     }
 };
 
@@ -581,8 +603,8 @@ private:
                 event = midifile[0][midiTimer.index];
 
                 //ignore pedals when playing midi file.
-                if (event[0] >= 0x80 && event[0] < 0x8f || event[0] >= 0x90 && event[0] < 0x9f && midiTimer.Channels.checkChannel(event))
-                    keyMapper->setKeyState_PIANO((int)event[0], (int)event[1] - 21, (int)event[2]);
+                if (event[0] >= 0x80 && event[0] < 0x8f || event[0] >= 0x90 && event[0] < 0x9f)
+                    keyMapper->setKeyState_PIANO((int)event[0], (int)event[1] - 21, (int)event[2], digitalPiano->midiTimer.Channels.checkChannel((short) event[0] & 0x0f));
 
                 midiTimer.index++;
             }
@@ -636,7 +658,7 @@ public:
             nBytes = message.size();
             if (nBytes > 1) {
                 //144 keys 176 pedals
-                keyMapper->setKeyState_PIANO((int)message[0], (int)message[1] - 21, (int)message[2]);
+                keyMapper->setKeyState_PIANO((int)message[0], (int)message[1] - 21, (int)message[2], digitalPiano->midiTimer.Channels.checkChannel((short)message[0] & 0x0f));
             }
             //Sleep(1);
         }
