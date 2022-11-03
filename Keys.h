@@ -18,10 +18,6 @@
 #include <mutex>
 #include <set>
 
-using std::chrono::high_resolution_clock;
-using std::chrono::duration_cast;
-using std::chrono::milliseconds;
-
 class key {
 public:
     char        channel = 0x00;
@@ -77,12 +73,13 @@ public:
 class FlyingNotes : public key {
 public:
     FlyingNotes(key & Key, short channel) {
-        this->name = Key.name;
-        this->position = Key.position;
+        this->name       = Key.name;
+        this->position   = Key.position;
         this->position.y = _KEYSIZE + (_KEYSIZE * .02f);
-        this->size = Key.size;
-        this->size.y = -1;
-        this->channel = channel;
+        this->size       = Key.size;
+        this->size.y     = -1;
+        this->channel    = channel;
+        this->isWhite    = Key.isWhite;
     }
 public:
     vector3i    color;

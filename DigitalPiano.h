@@ -19,6 +19,10 @@
 #include <mutex>
 #include <set>
 
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 struct channel { 
     bool MUTED = false; bool ACTIVE = false; char channelNum; 
     int drawSelf(olc::PixelGameEngine* parent, MAPPER * keyMapper, int index) { 
@@ -302,6 +306,7 @@ private:
             i = midiTimer.Channels.channels[j].drawSelf(this, keyMapper, i);
         }
     }
+
     void drawFlyingNote(FlyingNotes* note) {
         olc::Pixel color = getDrawingColor(note->isWhite, note->name);
         vector3i colorVector(color.r, color.g, color.b);
@@ -320,6 +325,7 @@ private:
         FillRoundedRect(note.position, note.size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
         DrawStringDecal(note.position + olc::vd2d(1, 1), std::to_string(note.channel), olc::Pixel(255, 255, 255, 150));
     }
+
     void drawFrame(double timeElasped) {
         keyMapper->threadLock.lock();
 
