@@ -51,13 +51,13 @@ public:
             channels[i].channelNum = i;
         }
     };
+public:
+    std::array<channel, 16> channels;
 private:
     short mask = 0x0f;
     bool checkRange(short maskedChannel) { return (short)maskedChannel >= 0x00 && (short)maskedChannel <= 0x0f; }
 public:
-    std::array<channel, 16> channels;
-public:
-    bool checkChannel(smf::MidiEvent event) {
+    bool checkChannel(smf::MidiEvent & event) {
         short maskedChannel = (short)event[0] & mask;
         if (channels[(short)maskedChannel].ACTIVE && !channels[(short)maskedChannel].MUTED) return true;
         return false;
@@ -291,7 +291,9 @@ private:
         for (std::string fileName : midiTimer.midiFileSet) {
             DrawString(10, 70 + (i++ * 20), fileName, olc::YELLOW, _TEXT_SCALE);
         }
-        i = 0;
+    }
+    void drawChannels() {
+        int i = 0;
         for (int j = 0; j < 16; j++) {
             i = midiTimer.Channels.channels[j].drawSelf(this, keyMapper, i);
         }
@@ -345,6 +347,7 @@ private:
             }
 
         }
+        drawChannels();
         keyMapper->threadLock.unlock();
         ProcessBarEvents();
         DrawString(10, 7, std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE, 1);
