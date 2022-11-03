@@ -308,7 +308,7 @@ private:
         if (!midiTimer.Channels.checkChannel(note->channel)) {
             colorVector = colorVector * vector3f(.3);
         }
-        FillRoundedRect(note->position, note->size - olc::vd2d(1, 1), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
+        FillRoundedRect(note->position, note->size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
         DrawString(note->position + olc::vd2d(1, 1), std::to_string(note->channel), olc::Pixel(255, 255, 255, 150));
     }
     void drawFlyingNote(FlyingNotes& note) {
@@ -317,7 +317,7 @@ private:
         if (!midiTimer.Channels.checkChannel(note.channel)) {
             colorVector = colorVector * vector3f(.3);
         }
-        FillRoundedRect(note.position, note.size - olc::vd2d(1, 1), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
+        FillRoundedRect(note.position, note.size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
         DrawStringDecal(note.position + olc::vd2d(1, 1), std::to_string(note.channel), olc::Pixel(255, 255, 255, 150));
     }
     void drawFrame(double timeElasped) {
