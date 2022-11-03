@@ -21,7 +21,7 @@
 
 struct channel { 
     bool MUTED = false; bool ACTIVE = false; char channelNum; 
-    int drawSelf(olc::PixelGameEngine* parent, int index) { 
+    int drawSelf(olc::PixelGameEngine* parent, MAPPER * keyMapper, int index) { 
         if (ACTIVE) { 
             olc::vi2d pos(_WINDOW_W - 110, 30 + (index++ * 20));
             olc::vi2d bounds(110, 13);
@@ -29,8 +29,14 @@ struct channel {
             olc::Pixel color = !MUTED ? olc::GREEN : olc::RED;
             //parent->DrawRect(pos, bounds, olc::WHITE);
             if (mousePos.x > pos.x && mousePos.y > pos.y && mousePos.y < pos.y + 13) {
-                if (parent->GetMouse(olc::Mouse::LEFT).bPressed) MUTED = MUTED ? false : true;
-                color = olc::BLUE;
+                if (parent->GetMouse(olc::Mouse::LEFT).bPressed) {
+                    MUTED = MUTED ? false : true;
+                    keyMapper->activelyDrawing.clear();
+                    for (int j = 0; j < 88; j++) {
+                        keyMapper->keyMap[j].velocity = 0;
+                    }
+                }
+                color = olc::CYAN;
             }
             parent->DrawString(pos.x, pos.y, "Channel : " + std::to_string(channelNum), color, _TEXT_SCALE);
         }
@@ -64,6 +70,11 @@ public:
             }
         }
         return true;
+    }
+    void resetChannels() {
+        for (int i = 0; i < 16; i++) {
+             channels[i].ACTIVE = channels[i].MUTED = false;
+        }
     }
 };
 
@@ -194,6 +205,7 @@ public:
         tsf_note_off_all            (keyMapper->soundFile);
         midiTimer.isPlaying         = false;
         midiTimer.timeSinceStart    = 0.0;
+        midiTimer.Channels          .resetChannels();
         keyMapper                   ->flushActiveNotes();
     }
 private:
@@ -281,7 +293,7 @@ private:
         }
         i = 0;
         for (int j = 0; j < 16; j++) {
-            i = midiTimer.Channels.channels[j].drawSelf(this, i);
+            i = midiTimer.Channels.channels[j].drawSelf(this, keyMapper, i);
         }
     }
     void drawFrame(double timeElasped) {
