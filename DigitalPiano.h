@@ -296,9 +296,11 @@ private:
         DrawString(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
         DrawString(10, 50, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
         int i = 0;
+        midiTimer.midiLock.lock();
         for (std::string fileName : midiTimer.midiFileSet) {
             DrawString(10, 70 + (i++ * 20), fileName, olc::YELLOW, _TEXT_SCALE);
         }
+        midiTimer.midiLock.unlock();
     }
     void drawChannels() {
         int i = 0;
@@ -690,7 +692,7 @@ public:
                 }
             }
             digitalPiano->midiTimer.midiLock.unlock();
-            Sleep(1000);
+            Sleep(5000);
         }
 
         return 0;
