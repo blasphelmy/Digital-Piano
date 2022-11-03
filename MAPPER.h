@@ -167,7 +167,7 @@ public:
                 }
                 if (keyMap[keyIdMap_PIANO[keyId]].velocity > 0)
                     activelyDrawing.erase(keyIdMap_PIANO[keyId]);
-                if (!pedal)
+                if (!pedal && channelOn)
                     tsf_note_off(soundFile, 0, keyId + 21);
             }
             keyMap[keyIdMap_PIANO[keyId]].velocity = velocity;
