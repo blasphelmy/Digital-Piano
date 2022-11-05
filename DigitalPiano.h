@@ -142,6 +142,7 @@ protected:
         olc::Pixel aliasedColor(aliasedVect.x, aliasedVect.y, aliasedVect.z);
         if (size.y < radius * 2) size.y = radius * 2;
         olc::vi2d innerRect = size - olc::vd2d(radius * 2.0, radius * 2.0);
+        if (innerRect.x % 2 == 0) innerRect.x++;
         olc::vi2d innerRect_pos = pos + olc::vd2d(radius, radius);
         int a = innerRect.x;
         int b = innerRect.y;
@@ -511,7 +512,7 @@ private:
         }
     }
 
-    void drawFlyingNote(FlyingNotes* note) {
+    void drawFlyingNote(FlyingNotes* note, bool detached) {
         olc::Pixel color = getDrawingColor(note->isWhite, note->name);
         vector3i colorVector(color.r, color.g, color.b);
         if (!midiTimer.Channels.checkChannel(note->channel)) {
@@ -519,10 +520,10 @@ private:
             colorVector = normalizeColorVector(colorVector, .9);
         }
         FillRoundedRect(note->position, note->size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z), 4);
-        DrawString(note->position + olc::vd2d(1, 1), std::to_string(note->channel), olc::Pixel(255, 255, 255, 150));
+        if(detached) olc::PixelGameEngine::DrawStringDecal(note->position + olc::vd2d(3, 1), std::to_string(note->channel), olc::Pixel(255, 255, 255, 150));
     }
-    void drawFlyingNote(FlyingNotes& note) {
-        drawFlyingNote(&note);
+    void drawFlyingNote(FlyingNotes& note, bool detached) {
+        drawFlyingNote(&note, detached);
     }
 
     void drawFrame(double timeElasped) {
@@ -549,7 +550,7 @@ private:
 
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
-            drawFlyingNote(onscreenKey);
+            drawFlyingNote(onscreenKey, true);
             onscreenKey.position.y -= yOffSet;
             if (onscreenKey.position.y + onscreenKey.size.y > 0)
                 newOnScreenElementsQueue.push(onscreenKey);
@@ -559,7 +560,7 @@ private:
             if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
             if (keyMapper->activelyDrawing.count(i) > 0) {
                 FlyingNotes* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                drawFlyingNote(drawnKey);
+                drawFlyingNote(drawnKey, false);
                 drawnKey->size.y += yOffSet;
                 drawnKey->position.y -= yOffSet;
             }
