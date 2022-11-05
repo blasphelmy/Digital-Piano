@@ -43,7 +43,7 @@ void setUp() {
 
     _WINDOW_W                   = (float)cxLogical * .75;
     _WINDOW_H                   = (float)cyLogical * .75;
-    if ((int)_WINDOW_W % 52 != 0) _WINDOW_W -= ((int)_WINDOW_W % 52);
+    if ((int)_WINDOW_W % 52 != 0) _WINDOW_W += 52 - ((int)_WINDOW_W % 52);
     _KEYSIZE                    = _WINDOW_H / 1.2272727273;
     _TEXT_SCALE                 = 1;
 

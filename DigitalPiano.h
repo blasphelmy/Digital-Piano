@@ -136,12 +136,10 @@ protected:
     
     void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color, int radius) {
         size.y = size.y - 2;
-        vector3i aliasedVect(color.r, color.g, color.b);
-        aliasedVect = aliasedVect * vector3f(.3);
-        olc::Pixel aliasedColor(aliasedVect.x, aliasedVect.y, aliasedVect.z);
+        olc::Pixel aliasedColor(color.r, color.g, color.b, 15);
         if (size.y < radius * 2) size.y = radius * 2;
         olc::vi2d innerRect = size - olc::vd2d(radius * 2.0, radius * 2.0);
-        if (innerRect.x % 2 == 0) innerRect.x--;
+        if (innerRect.x % 2 == 1) innerRect.x--;
         olc::vi2d innerRect_pos = pos + olc::vd2d(radius, radius);
         int a = innerRect.x;
         int b = innerRect.y;
@@ -155,10 +153,10 @@ protected:
                 if (x <= c && y <= d) {
                     //top left corner
                     distance = (x - c) * (x - c) + (y - d) * (y - d);
-                    if (distance < r2)
+                    if (distance <= r2)
                         Draw(x, y, color);
-                    //else if (distance < r2 + 2)
-                    //    Draw(x, y, aliasedColor);
+                    //else if (distance <= r2 + 2)
+                    //    Draw(x, y, color);
                 }
                 else if (x >= c + a && y <= d) {
                     //top right corner
@@ -166,23 +164,23 @@ protected:
                     if (distance <= r2)
                         Draw(x, y, color);
                     //else if (distance <= r2 + 2)
-                    //    Draw(x, y, aliasedColor);
+                    //    Draw(x, y, color);
                 }
                 else if (x >= c + a && y >= d + b) {
                     //bottom right corner
                     distance = (x - (c + a)) * (x - (c + a)) + (y - (d + b)) * (y - (d + b));
-                    if(distance <= r2)
+                    if (distance <= r2)
                         Draw(x, y, color);
                     //else if (distance <= r2 + 2)
-                    //    Draw(x, y, aliasedColor);
+                    //    Draw(x, y, color);
                 }
                 else if (x <= c && y >= d + b) {
                     //bottom left corner
                     distance = (x - c) * (x - c) + (y - (d + b)) * (y - (d + b));
-                    if(distance <= r2)
+                    if (distance <= r2)
                         Draw(x, y, color);
-                    //else if (distance <= r2 + 2)
-                    //    Draw(x, y, aliasedColor);
+                    //else if (distance <= r2 + 2 )
+                    //    Draw(x, y, color);
                 }
                 else {
                     Draw(x, y, color);

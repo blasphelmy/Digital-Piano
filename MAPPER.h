@@ -46,7 +46,7 @@ public:
         //index 52-87 : black keys
         double          slice = _WINDOW_W / 52.f;
         olc::vd2d       whiteKeySize(_WINDOW_W / 52.f, _WINDOW_H / 5.4);
-        olc::vd2d       blackKeySize(_WINDOW_W / 70.f, _WINDOW_H / 8.3076923);
+        olc::vd2d       blackKeySize(_WINDOW_W / 60.f, _WINDOW_H / 8.3076923);
         std::string     abc = "ABCDEFG";
         olc::vd2d       initialPos(0, _KEYSIZE);
         olc::vd2d       offSet(slice, 0);
