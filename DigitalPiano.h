@@ -134,60 +134,78 @@ protected:
         return vector3i(new_r, new_g, new_b);
     };
     
-    void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color, int radius) {
-        size.y = size.y - 2;
-        olc::Pixel aliasedColor(color.r, color.g, color.b, 15);
-        if (size.y < radius * 2) size.y = radius * 2;
-        olc::vi2d innerRect = size - olc::vd2d(radius * 2.0, radius * 2.0);
-        if (innerRect.x % 2 == 1) innerRect.x--;
-        olc::vi2d innerRect_pos = pos + olc::vd2d(radius, radius);
-        int a = innerRect.x;
-        int b = innerRect.y;
-        int c = innerRect_pos.x;
-        int d = innerRect_pos.y;
-        int r2 = radius * radius;
-        int distance = 0;
+    void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color, float radius) {
+        //size.y = size.y - 2;
+        //olc::Pixel aliasedColor(color.r, color.g, color.b, 15);
+        //if (size.y < radius * 2) size.y = radius * 2;
+        //olc::vi2d innerRect = size - olc::vd2d(radius * 2.0, radius * 2.0);
+        //if (innerRect.x % 2 == 1) innerRect.x--;
+        //olc::vi2d innerRect_pos = pos + olc::vd2d(radius, radius);
+        //int a = innerRect.x;
+        //int b = innerRect.y;
+        //int c = innerRect_pos.x;
+        //int d = innerRect_pos.y;
+        //int r2 = radius * radius;
+        //int distance = 0;
 
-        for (int x = pos.x; x < pos.x + size.x; x++) {
-            for (int y = pos.y; y < pos.y + size.y; y++) {
-                if (x <= c && y <= d) {
-                    //top left corner
-                    distance = (x - c) * (x - c) + (y - d) * (y - d);
-                    if (distance <= r2)
-                        Draw(x, y, color);
-                    //else if (distance <= r2 + 2)
-                    //    Draw(x, y, color);
-                }
-                else if (x >= c + a && y <= d) {
-                    //top right corner
-                    distance = (x - (c + a)) * (x - (c + a)) + (y - d) * (y - d);
-                    if (distance <= r2)
-                        Draw(x, y, color);
-                    //else if (distance <= r2 + 2)
-                    //    Draw(x, y, color);
-                }
-                else if (x >= c + a && y >= d + b) {
-                    //bottom right corner
-                    distance = (x - (c + a)) * (x - (c + a)) + (y - (d + b)) * (y - (d + b));
-                    if (distance <= r2)
-                        Draw(x, y, color);
-                    //else if (distance <= r2 + 2)
-                    //    Draw(x, y, color);
-                }
-                else if (x <= c && y >= d + b) {
-                    //bottom left corner
-                    distance = (x - c) * (x - c) + (y - (d + b)) * (y - (d + b));
-                    if (distance <= r2)
-                        Draw(x, y, color);
-                    //else if (distance <= r2 + 2 )
-                    //    Draw(x, y, color);
-                }
-                else {
-                    Draw(x, y, color);
-                }
+        //for (int x = pos.x; x < pos.x + size.x; x++) {
+        //    for (int y = pos.y; y < pos.y + size.y; y++) {
+        //        if (x <= c && y <= d) {
+        //            //top left corner
+        //            distance = (x - c) * (x - c) + (y - d) * (y - d);
+        //            if (distance <= r2)
+        //                Draw(x, y, color);
+        //            //else if (distance <= r2 + 2)
+        //            //    Draw(x, y, color);
+        //        }
+        //        else if (x >= c + a && y <= d) {
+        //            //top right corner
+        //            distance = (x - (c + a)) * (x - (c + a)) + (y - d) * (y - d);
+        //            if (distance <= r2)
+        //                Draw(x, y, color);
+        //            //else if (distance <= r2 + 2)
+        //            //    Draw(x, y, color);
+        //        }
+        //        else if (x >= c + a && y >= d + b) {
+        //            //bottom right corner
+        //            distance = (x - (c + a)) * (x - (c + a)) + (y - (d + b)) * (y - (d + b));
+        //            if (distance <= r2)
+        //                Draw(x, y, color);
+        //            //else if (distance <= r2 + 2)
+        //            //    Draw(x, y, color);
+        //        }
+        //        else if (x <= c && y >= d + b) {
+        //            //bottom left corner
+        //            distance = (x - c) * (x - c) + (y - (d + b)) * (y - (d + b));
+        //            if (distance <= r2)
+        //                Draw(x, y, color);
+        //            //else if (distance <= r2 + 2 )
+        //            //    Draw(x, y, color);
+        //        }
+        //        else {
+        //            Draw(x, y, color);
+        //        }
 
-            }
-        }     
+        //    }
+        //}     
+        radius = 4.f;
+        if (size.y < 15) {
+            size.y = 15;
+        }
+        olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
+        olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
+        FillRect(innerRect_pos, innerRect, color);
+
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+
+        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 1.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x - 1.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+
+        FillCircle(innerRect_pos, radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 2.f), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y + innerRect.y - 2.f), radius, color);
+        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y), radius, color);
     }
 };
 
