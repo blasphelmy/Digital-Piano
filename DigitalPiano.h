@@ -121,7 +121,9 @@ public:
 
 class PIXELGAMEENGINE_EXT : public olc::PixelGameEngine {
 protected:
-        vector3i normalizeColorVector(vector3i colorVector, float f, float r_bias = 0.3, float g_bias = 0.6, float b_bias = 0.1) {
+    void DrawStringDecal(float x, float y, std::string text, olc::Pixel color) { olc::PixelGameEngine::DrawStringDecal(olc::vd2d(x, y), text, color); }
+
+    vector3i normalizeColorVector(vector3i colorVector, float f, float r_bias = 0.3, float g_bias = 0.6, float b_bias = 0.1) {
         float r = colorVector.x;
         float g = colorVector.y;
         float b = colorVector.z;
@@ -131,10 +133,7 @@ protected:
         float new_b = b + f * (L - b);
         return vector3i(new_r, new_g, new_b);
     };
-    void DrawStringDecal(float x, float y, std::string text, olc::Pixel color) {
-        olc::PixelGameEngine::DrawStringDecal(olc::vd2d(x, y), text, color);
-    }
-
+    
     void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color, int radius) {
         size.y = size.y - 2;
         vector3i aliasedVect(color.r, color.g, color.b);
@@ -142,7 +141,7 @@ protected:
         olc::Pixel aliasedColor(aliasedVect.x, aliasedVect.y, aliasedVect.z);
         if (size.y < radius * 2) size.y = radius * 2;
         olc::vi2d innerRect = size - olc::vd2d(radius * 2.0, radius * 2.0);
-        if (innerRect.x % 2 == 0) innerRect.x++;
+        if (innerRect.x % 2 == 0) innerRect.x--;
         olc::vi2d innerRect_pos = pos + olc::vd2d(radius, radius);
         int a = innerRect.x;
         int b = innerRect.y;
@@ -151,7 +150,7 @@ protected:
         int r2 = radius * radius;
         int distance = 0;
 
-        for (int x = pos.x; x < pos.x + size.x; x++) {
+        for (int x = pos.x; x < pos.x + size.x - 1; x++) {
             for (int y = pos.y; y < pos.y + size.y; y++) {
                 distance = INT_MAX;
                 if (x <= c && y <= d) {
@@ -159,7 +158,7 @@ protected:
                     distance = (x - c) * (x - c) + (y - d) * (y - d);
                     if (distance < r2)
                         Draw(x, y, color);
-                    else if (distance < r2 + 1)
+                    else if (distance < r2 + 2)
                         Draw(x, y, aliasedColor);
                 }
                 else if (x >= c + a && y <= d) {
@@ -167,7 +166,7 @@ protected:
                     distance = (x - (c + a)) * (x - (c + a)) + (y - d) * (y - d);
                     if (distance <= r2)
                         Draw(x, y, color);
-                    else if (distance <= r2 + 1)
+                    else if (distance <= r2 + 2)
                         Draw(x, y, aliasedColor);
                 }
                 else if (x >= c + a && y >= d + b) {
@@ -175,7 +174,7 @@ protected:
                     distance = (x - (c + a)) * (x - (c + a)) + (y - (d + b)) * (y - (d + b));
                     if(distance <= r2)
                         Draw(x, y, color);
-                    else if (distance <= r2 + 1)
+                    else if (distance <= r2 + 2)
                         Draw(x, y, aliasedColor);
                 }
                 else if (x <= c && y >= d + b) {
@@ -183,7 +182,7 @@ protected:
                     distance = (x - c) * (x - c) + (y - (d + b)) * (y - (d + b));
                     if(distance <= r2)
                         Draw(x, y, color);
-                    else if (distance <= r2 + 1)
+                    else if (distance <= r2 + 2)
                         Draw(x, y, aliasedColor);
                 }
                 else {
@@ -520,7 +519,7 @@ private:
             colorVector = normalizeColorVector(colorVector, .9);
         }
         FillRoundedRect(note->position, note->size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z), 4);
-        if(detached) olc::PixelGameEngine::DrawStringDecal(note->position + olc::vd2d(3, 1), std::to_string(note->channel), olc::Pixel(255, 255, 255, 150));
+        if(detached) olc::PixelGameEngine::DrawStringDecal(note->position + olc::vd2d(3, 1), std::to_string(note->channel), olc::Pixel(0, 0, 0, 255));
     }
     void drawFlyingNote(FlyingNotes& note, bool detached) {
         drawFlyingNote(&note, detached);
