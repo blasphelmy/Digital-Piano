@@ -41,9 +41,9 @@ void setUp() {
     float cxLogical             = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
     float cyLogical             = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
 
-    _WINDOW_W                   = (float)cxLogical - (int)(cxLogical * .1);
-    _WINDOW_H                   = (float)cyLogical - (int)(cyLogical * .1);
-
+    _WINDOW_W                   = (float)cxLogical * .75;
+    _WINDOW_H                   = (float)cyLogical * .75;
+    if ((int)_WINDOW_W % 52 != 0) _WINDOW_W -= ((int)_WINDOW_W % 52);
     _KEYSIZE                    = _WINDOW_H / 1.2272727273;
     _TEXT_SCALE                 = 1;
 

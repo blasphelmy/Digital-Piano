@@ -150,44 +150,44 @@ protected:
         int r2 = radius * radius;
         int distance = 0;
 
-        for (int x = pos.x; x < pos.x + size.x - 1; x++) {
+        for (int x = pos.x; x < pos.x + size.x; x++) {
             for (int y = pos.y; y < pos.y + size.y; y++) {
-                distance = INT_MAX;
                 if (x <= c && y <= d) {
                     //top left corner
                     distance = (x - c) * (x - c) + (y - d) * (y - d);
                     if (distance < r2)
                         Draw(x, y, color);
-                    else if (distance < r2 + 2)
-                        Draw(x, y, aliasedColor);
+                    //else if (distance < r2 + 2)
+                    //    Draw(x, y, aliasedColor);
                 }
                 else if (x >= c + a && y <= d) {
                     //top right corner
                     distance = (x - (c + a)) * (x - (c + a)) + (y - d) * (y - d);
                     if (distance <= r2)
                         Draw(x, y, color);
-                    else if (distance <= r2 + 2)
-                        Draw(x, y, aliasedColor);
+                    //else if (distance <= r2 + 2)
+                    //    Draw(x, y, aliasedColor);
                 }
                 else if (x >= c + a && y >= d + b) {
                     //bottom right corner
                     distance = (x - (c + a)) * (x - (c + a)) + (y - (d + b)) * (y - (d + b));
                     if(distance <= r2)
                         Draw(x, y, color);
-                    else if (distance <= r2 + 2)
-                        Draw(x, y, aliasedColor);
+                    //else if (distance <= r2 + 2)
+                    //    Draw(x, y, aliasedColor);
                 }
                 else if (x <= c && y >= d + b) {
                     //bottom left corner
                     distance = (x - c) * (x - c) + (y - (d + b)) * (y - (d + b));
                     if(distance <= r2)
                         Draw(x, y, color);
-                    else if (distance <= r2 + 2)
-                        Draw(x, y, aliasedColor);
+                    //else if (distance <= r2 + 2)
+                    //    Draw(x, y, aliasedColor);
                 }
                 else {
                     Draw(x, y, color);
                 }
+
             }
         }     
     }
