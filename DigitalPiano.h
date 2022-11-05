@@ -20,6 +20,10 @@
 #include <set>
 #include <math.h>
 
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 struct channel { 
     bool MUTED = false; bool ACTIVE = false; char channelNum; 
     int drawSelf(olc::PixelGameEngine* parent, MAPPER * keyMapper, int index) { 
@@ -738,7 +742,7 @@ public:
                 }
             }
             digitalPiano->midiTimer.midiLock.unlock();
-            Sleep(1000);
+            Sleep(5000);
         }
 
         return 0;
