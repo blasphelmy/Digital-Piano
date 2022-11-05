@@ -170,3 +170,54 @@ struct vector3i {
         return result;
     }
 };
+
+struct vector4i {
+    int x, y, z, a;
+    vector4i(int x, int y, int z, int a) {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+        this->a = a;
+    }
+    vector4i() {
+        this->x = 0;
+        this->y = 0;
+        this->z = 0;
+    }
+    ~vector4i() {}
+    vector4i operator + (vector4i const& obj) {
+        vector4i result;
+        result.x = x + obj.x;
+        result.y = y + obj.y;
+        result.z = z + obj.z;
+        return result;
+    }
+    vector4i operator - (vector4i const& obj) {
+        vector4i result;
+        result.x = x - obj.x;
+        result.y = y - obj.y;
+        result.z = z - obj.z;
+        return result;
+    }
+    vector4i operator * (vector3f const& obj) {
+        vector4i result;
+        result.x = x * (float)obj.x;
+        result.y = y * (float)obj.y;
+        result.z = z * (float)obj.z;
+        return result;
+    }
+    vector4i operator * (vector4i const& obj) {
+        vector4i result;
+        result.x = x * obj.x;
+        result.y = y * obj.y;
+        result.z = z * obj.z;
+        return result;
+    }
+    vector4i operator / (vector4i const& obj) {
+        vector4i result;
+        result.x = x / obj.x;
+        result.y = y / obj.y;
+        result.z = z / obj.z;
+        return result;
+    }
+};

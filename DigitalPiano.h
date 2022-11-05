@@ -18,6 +18,7 @@
 #include <queue>
 #include <mutex>
 #include <set>
+#include <math.h>
 
 struct channel { 
     bool MUTED = false; bool ACTIVE = false; char channelNum; 
@@ -55,17 +56,19 @@ public:
     std::array<channel, 16> channels;
 private:
     short mask = 0x0f;
-    bool checkRange(short maskedChannel) { return (short)maskedChannel >= 0x00 && (short)maskedChannel <= 0x0f; }
+    bool checkRange(short maskedChannel) 
+    { return (short)maskedChannel >= 0x00 && (short)maskedChannel <= 0x0f; }
+
 public:
-    bool checkChannel(smf::MidiEvent & event) {
-        short maskedChannel = (short)event[0] & mask;
-        if (channels[(short)maskedChannel].ACTIVE && !channels[(short)maskedChannel].MUTED) return true;
-        return false;
-    }
     bool checkChannel(short channel) {
         if (channels[(short)channel].ACTIVE && !channels[(short)channel].MUTED) return true;
         return false;
     }
+    bool checkChannel(smf::MidiEvent & event) {
+        short maskedChannel = (short)event[0] & mask;
+        return checkChannel(maskedChannel);;
+    }
+
     bool setChannels(smf::MidiFile& file) {
         for (int i = 0; i < file[0].size(); i++) {
             if (!checkChannel(file[0][i])) {
@@ -113,26 +116,76 @@ public:
 };
 
 class PIXELGAMEENGINE_EXT : public olc::PixelGameEngine {
-public:
-    void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color) {
-        float radius = 4.f;
-        if (size.y < 15) {
-            size.y = 15;
-        }
-        olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
-        olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
-        FillRect(innerRect_pos, innerRect, color);
+protected:
+        vector3i normalizeColorVector(vector3i colorVector, float f, float r_bias = 0.3, float g_bias = 0.6, float b_bias = 0.1) {
+        float r = colorVector.x;
+        float g = colorVector.y;
+        float b = colorVector.z;
+        float L = r_bias * r + g_bias * g + b_bias * b;
+        float new_r = r + f * (L - r);
+        float new_g = g + f * (L - g);
+        float new_b = b + f * (L - b);
+        return vector3i(new_r, new_g, new_b);
+    };
+    void DrawStringDecal(float x, float y, std::string text, olc::Pixel color) {
+        olc::PixelGameEngine::DrawStringDecal(olc::vd2d(x, y), text, color);
+    }
 
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+    void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color, int radius) {
+        size.y = size.y - 2;
+        vector3i aliasedVect(color.r, color.g, color.b);
+        aliasedVect = aliasedVect * vector3f(.3);
+        olc::Pixel aliasedColor(aliasedVect.x, aliasedVect.y, aliasedVect.z);
+        if (size.y < radius * 2) size.y = radius * 2;
+        olc::vi2d innerRect = size - olc::vd2d(radius * 2.0, radius * 2.0);
+        olc::vi2d innerRect_pos = pos + olc::vd2d(radius, radius);
+        int a = innerRect.x;
+        int b = innerRect.y;
+        int c = innerRect_pos.x;
+        int d = innerRect_pos.y;
+        int r2 = radius * radius;
+        int distance = 0;
 
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 1.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x - 1.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
-        
-        FillCircle(innerRect_pos, radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 2.f), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y + innerRect.y - 2.f), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y), radius, color);
+        for (int x = pos.x; x < pos.x + size.x; x++) {
+            for (int y = pos.y; y < pos.y + size.y; y++) {
+                distance = INT_MAX;
+                if (x <= c && y <= d) {
+                    //top left corner
+                    distance = (x - c) * (x - c) + (y - d) * (y - d);
+                    if (distance < r2)
+                        Draw(x, y, color);
+                    else if (distance < r2 + 1)
+                        Draw(x, y, aliasedColor);
+                }
+                else if (x >= c + a && y <= d) {
+                    //top right corner
+                    distance = (x - (c + a)) * (x - (c + a)) + (y - d) * (y - d);
+                    if (distance <= r2)
+                        Draw(x, y, color);
+                    else if (distance <= r2 + 1)
+                        Draw(x, y, aliasedColor);
+                }
+                else if (x >= c + a && y >= d + b) {
+                    //bottom right corner
+                    distance = (x - (c + a)) * (x - (c + a)) + (y - (d + b)) * (y - (d + b));
+                    if(distance <= r2)
+                        Draw(x, y, color);
+                    else if (distance <= r2 + 1)
+                        Draw(x, y, aliasedColor);
+                }
+                else if (x <= c && y >= d + b) {
+                    //bottom left corner
+                    distance = (x - c) * (x - c) + (y - (d + b)) * (y - (d + b));
+                    if(distance <= r2)
+                        Draw(x, y, color);
+                    else if (distance <= r2 + 1)
+                        Draw(x, y, aliasedColor);
+                }
+                else {
+                    Draw(x, y, color);
+                }
+            }
+        }     
     }
 };
 
@@ -162,7 +215,7 @@ public:
         keyMapper = newMapper;
     }
 public:
-    MidiTimer midiTimer;
+    MidiTimer               midiTimer;
 private:
     struct ProgressBar {
         olc::vd2d bg            = olc::vd2d(_WINDOW_W, 20.f);
@@ -187,6 +240,8 @@ private:
     ProgressBar                               progressBar;
     float                                     timeAccumalator = 500.f;
     float                                     targetBPM = 1.5f;
+    void*                                     thread;
+
 public:
     void playSignal(smf::MidiFile & midifile) {
         midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds()
@@ -212,11 +267,11 @@ public:
         midiTimer.Channels          .resetChannels();
         keyMapper                   ->flushActiveNotes();
     }
+
 private:
     bool OnUserUpdate(float felaspedTime) override {
-        
-        keyListeners();
         Clear(olc::Pixel(40, 40, 40));
+        keyListeners();
         drawFrame(felaspedTime);
         drawData();
         SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
@@ -226,6 +281,7 @@ private:
         midiTimer.flag = -1;
         return true;
     }
+
 private:
     void SeekRoutine(int direction, float timeOffset) {
         midiTimer.timeSinceStart += timeOffset * direction;
@@ -287,95 +343,7 @@ private:
         return olc::Pixel(color.x, color.y, color.z);
     }
 
-
-    void drawData() {
-        DrawString(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED, _TEXT_SCALE);
-        DrawString(10, 50, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE, _TEXT_SCALE);
-        int i = 0;
-        for (std::string fileName : midiTimer.midiFileSet) {
-            DrawString(10, 70 + (i++ * 20), fileName, olc::YELLOW, _TEXT_SCALE);
-        }
-    }
-    void drawChannels() {
-        int i = 0;
-        for (int j = 0; j < 16; j++) {
-            i = midiTimer.Channels.channels[j].drawSelf(this, keyMapper, i);
-        }
-    }
-    void drawFlyingNote(FlyingNotes* note) {
-        olc::Pixel color = getDrawingColor(note->isWhite, note->name);
-        vector3i colorVector(color.r, color.g, color.b);
-        if (!midiTimer.Channels.checkChannel(note->channel)) {
-            colorVector = colorVector * vector3f(.3);
-        }
-        FillRoundedRect(note->position, note->size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
-        DrawString(note->position + olc::vd2d(1, 1), std::to_string(note->channel), olc::Pixel(255, 255, 255, 150));
-    }
-    void drawFlyingNote(FlyingNotes& note) {
-        olc::Pixel color = getDrawingColor(note.isWhite, note.name);
-        vector3i colorVector(color.r, color.g, color.b);
-        if (!midiTimer.Channels.checkChannel(note.channel)) {
-            colorVector = colorVector * vector3f(.3);
-        }
-        FillRoundedRect(note.position, note.size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z));
-        DrawStringDecal(note.position + olc::vd2d(1, 1), std::to_string(note.channel), olc::Pixel(255, 255, 255, 150));
-    }
-    void drawFrame(double timeElasped) {
-        keyMapper->threadLock.lock();
-
-        double yOffSet = timeElasped * 100.f * midiTimer.speed;
-        std::queue<FlyingNotes> newOnScreenElementsQueue;
-        std::queue<horizontalLine> newHorizontalLinesQueue;
-        timeAccumalator += timeElasped * midiTimer.speed;
-
-        if (timeAccumalator > midiTimer.qNotePerSec) {
-            timeAccumalator = 0.f;
-            scrollingLines.push(horizontalLine());
-        }
-
-        while (!scrollingLines.empty()) {
-            horizontalLine line = scrollingLines.front();
-            scrollingLines.pop();
-            if (line.drawSelf(this, yOffSet)) newHorizontalLinesQueue.push(line);
-        }
-        scrollingLines = newHorizontalLinesQueue;
-
-        while (!keyMapper->onScreenNoteElements.empty()) {
-
-            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
-            keyMapper->onScreenNoteElements.pop();
-            drawFlyingNote(onscreenKey);
-            onscreenKey.position.y -= yOffSet;
-            if (onscreenKey.position.y + onscreenKey.size.y > 0)
-                newOnScreenElementsQueue.push(onscreenKey);
-        }
-        keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
-        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-            if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
-            if (keyMapper->activelyDrawing.count(i) > 0) {
-                FlyingNotes* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                drawFlyingNote(drawnKey);
-                drawnKey->size.y += yOffSet;
-                drawnKey->position.y -= yOffSet;
-            }
-
-            key thisKey = keyMapper->keyMap[i];
-
-            if (thisKey.isWhite) {
-                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
-            }
-            else {
-                FillRoundedRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
-            }
-
-        }
-        drawChannels();
-        keyMapper->threadLock.unlock();
-        ProcessBarEvents();
-        DrawStringDecal(olc::vd2d(10, 7), std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
-    }
-
-    void keyListeners() {
+    int keyListeners() {
         if (GetKey(olc::Key::LEFT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
@@ -521,6 +489,91 @@ private:
                 midiTimer.isPlaying = true;
             }
         }
+        return 0;
+    }
+
+    void drawData() {
+        DrawStringDecal(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED);
+        DrawStringDecal(10, 50, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE);
+        int i = 0;
+        for (std::string fileName : midiTimer.midiFileSet) {
+            DrawStringDecal(10, 70 + (i++ * 20), fileName, olc::YELLOW);
+        }
+    }
+    void drawChannels() {
+        int i = 0;
+        for (int j = 0; j < 16; j++) {
+            i = midiTimer.Channels.channels[j].drawSelf(this, keyMapper, i);
+        }
+    }
+
+    void drawFlyingNote(FlyingNotes* note) {
+        olc::Pixel color = getDrawingColor(note->isWhite, note->name);
+        vector3i colorVector(color.r, color.g, color.b);
+        if (!midiTimer.Channels.checkChannel(note->channel)) {
+
+            colorVector = normalizeColorVector(colorVector, .9);
+        }
+        FillRoundedRect(note->position, note->size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z), 4);
+        DrawString(note->position + olc::vd2d(1, 1), std::to_string(note->channel), olc::Pixel(255, 255, 255, 150));
+    }
+    void drawFlyingNote(FlyingNotes& note) {
+        drawFlyingNote(&note);
+    }
+
+    void drawFrame(double timeElasped) {
+        keyMapper->threadLock.lock();
+
+        double yOffSet = timeElasped * 100.f * midiTimer.speed;
+        std::queue<FlyingNotes> newOnScreenElementsQueue;
+        std::queue<horizontalLine> newHorizontalLinesQueue;
+        timeAccumalator += timeElasped * midiTimer.speed;
+
+        if (timeAccumalator > midiTimer.qNotePerSec) {
+            timeAccumalator = 0.f;
+            scrollingLines.push(horizontalLine());
+        }
+
+        while (!scrollingLines.empty()) {
+            horizontalLine line = scrollingLines.front();
+            scrollingLines.pop();
+            if (line.drawSelf(this, yOffSet)) newHorizontalLinesQueue.push(line);
+        }
+        scrollingLines = newHorizontalLinesQueue;
+
+        while (!keyMapper->onScreenNoteElements.empty()) {
+
+            FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
+            keyMapper->onScreenNoteElements.pop();
+            drawFlyingNote(onscreenKey);
+            onscreenKey.position.y -= yOffSet;
+            if (onscreenKey.position.y + onscreenKey.size.y > 0)
+                newOnScreenElementsQueue.push(onscreenKey);
+        }
+        keyMapper->onScreenNoteElements = newOnScreenElementsQueue;
+        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
+            if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
+            if (keyMapper->activelyDrawing.count(i) > 0) {
+                FlyingNotes* drawnKey = keyMapper->activelyDrawing.find(i)->second;
+                drawFlyingNote(drawnKey);
+                drawnKey->size.y += yOffSet;
+                drawnKey->position.y -= yOffSet;
+            }
+
+            key thisKey = keyMapper->keyMap[i];
+
+            if (thisKey.isWhite) {
+                FillRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name));
+            }
+            else {
+                FillRoundedRect(thisKey.position, thisKey.size - olc::vd2d(1, 1), getColor(thisKey.isWhite, thisKey.velocity, thisKey.name), 4);
+            }
+
+        }
+        drawChannels();
+        keyMapper->threadLock.unlock();
+        ProcessBarEvents();
+        DrawStringDecal(10, 7, std::to_string(midiTimer.timeSinceStart / 1000.f) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
     }
     
     void ProcessBarEvents() {
@@ -637,6 +690,7 @@ public:
                 keyMapper->activeNotesPool.pop();
                 keyMapper->threadLock.unlock();
             }
+            Sleep(1);
         }
         return 0;
     }
@@ -660,7 +714,7 @@ public:
                 //144 keys 176 pedals
                 keyMapper->setKeyState_PIANO((int)message[0], (int)message[1] - 21, (int)message[2], digitalPiano->midiTimer.Channels.checkChannel((short)message[0] & 0x0f));
             }
-            //Sleep(1);
+            Sleep(1);
         }
     cleanup:
         delete midiin;

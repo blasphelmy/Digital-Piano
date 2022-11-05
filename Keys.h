@@ -83,6 +83,7 @@ public:
         this->size = Key.size;
         this->size.y = -1;
         this->channel = channel;
+        this->isWhite = Key.isWhite;
     }
 public:
     vector3i    color;
