@@ -29,11 +29,9 @@ struct channel {
     int drawSelf(olc::PixelGameEngine* parent, MAPPER * keyMapper, int index) { 
         if (ACTIVE) { 
             olc::vi2d pos(_WINDOW_W - 110, 30 + (index++ * 20));
-            olc::vi2d bounds(110, 13);
-            olc::vi2d mousePos = parent->GetMousePos();
+            olc::vi2d bounds(pos.x + 110, 13 + pos.y);
             olc::Pixel color = !MUTED ? olc::GREEN : olc::RED;
-            //parent->DrawRect(pos, bounds, olc::WHITE);
-            if (mousePos.x > pos.x && mousePos.y > pos.y && mousePos.y < pos.y + 13) {
+            if (parent->checkBounds(pos, bounds)) {
                 if (parent->GetMouse(olc::Mouse::LEFT).bPressed) {
                     MUTED = MUTED ? false : true;
                     /*keyMapper->activelyDrawing.clear();
@@ -90,7 +88,7 @@ public:
 };
 
 class MidiTimer {
-public:
+public: 
     //chrono library is so verbose.
     high_resolution_clock::time_point   start;
     high_resolution_clock::time_point   finish;
@@ -141,12 +139,12 @@ protected:
         //olc::vi2d innerRect = size - olc::vd2d(radius * 2.0, radius * 2.0);
         //if (innerRect.x % 2 == 1) innerRect.x--;
         //olc::vi2d innerRect_pos = pos + olc::vd2d(radius, radius);
-        //int a = innerRect.x;
-        //int b = innerRect.y;
-        //int c = innerRect_pos.x;
-        //int d = innerRect_pos.y;
-        //int r2 = radius * radius;
-        //int distance = 0;
+        //float a = innerRect.x;
+        //float b = innerRect.y;
+        //float c = innerRect_pos.x;
+        //float d = innerRect_pos.y;
+        //float r2 = radius * radius;
+        //float distance = 0;
 
         //for (int x = pos.x; x < pos.x + size.x; x++) {
         //    for (int y = pos.y; y < pos.y + size.y; y++) {
@@ -235,7 +233,7 @@ public:
         keyMapper = newMapper;
     }
 public:
-    MidiTimer               midiTimer;
+    MidiTimer midiTimer;
 private:
     struct ProgressBar {
         olc::vd2d bg            = olc::vd2d(_WINDOW_W, 20.f);
@@ -274,6 +272,7 @@ public:
         midiTimer.timeSinceStart    = 0.0;
         timeAccumalator             = 0.f;
         keyMapper->pedal            = true;
+        midiTimer.flag              = 0;
         
         if (midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
 
@@ -282,7 +281,7 @@ public:
     }
     void reset() {
         tsf_note_off_all            (keyMapper->soundFile);
-        midiTimer.isPlaying         = false;
+        if(midiTimer.flag != -2)    midiTimer.isPlaying = false;
         midiTimer.timeSinceStart    = 0.0;
         midiTimer.Channels          .resetChannels();
         keyMapper                   ->flushActiveNotes();
@@ -303,6 +302,12 @@ private:
     }
 
 private:
+    void resetActiveNotes() {
+        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
+            keyMapper->keyMap[i].velocity = 0;
+            if (keyMapper->activelyDrawing.count(i) > 0) keyMapper->activelyDrawing.erase(i);
+        }
+    }
     void SeekRoutine(int direction, float timeOffset) {
         midiTimer.timeSinceStart += timeOffset * direction;
         std::queue<FlyingNotes> reset;
@@ -314,10 +319,7 @@ private:
             onscreenKey.position.y -= timeOffset / 10.f * direction;
             if (onscreenKey.position.y < _KEYSIZE) reset.push(onscreenKey);
         }
-        for (int i = 0; i < keyMapper->keyMap.size(); i++) {
-            keyMapper->keyMap[i].velocity = 0;
-            if (keyMapper->activelyDrawing.count(i) > 0) keyMapper->activelyDrawing.erase(i);
-        }
+        resetActiveNotes();
         while (!scrollingLines.empty()) {
             horizontalLine line = scrollingLines.front();
             line.y -= timeOffset / 10.f * direction;
@@ -385,7 +387,7 @@ private:
         if (GetKey(olc::Key::DOWN).bPressed) {
             midiTimer.speed = midiTimer.speed - .1f;
         }
-        if (!midiTimer.isPlaying && GetKey(olc::SHIFT).bHeld) {
+        /*if (!midiTimer.isPlaying && GetKey(olc::SHIFT).bHeld) {
             if (GetKey(olc::A).bPressed) {
                 midiTimer.fileName += "A";
             }
@@ -508,16 +510,25 @@ private:
             if (GetKey(olc::ENTER).bPressed) {
                 midiTimer.isPlaying = true;
             }
-        }
+        }*/
         return 0;
     }
 
     void drawData() {
-        DrawStringDecal(10, 30, "Hold shift then enter in an mid file name : " + midiTimer.fileName, GetKey(olc::SHIFT).bHeld && !midiTimer.isPlaying ? olc::CYAN : olc::RED);
+        DrawStringDecal(10, 30, "Title : " + midiTimer.fileName, olc::RED);
         DrawStringDecal(10, 50, "Speed (up/down) keys : x" + std::to_string(midiTimer.speed), olc::WHITE);
         int i = 0;
         for (std::string fileName : midiTimer.midiFileSet) {
-            DrawStringDecal(10, 70 + (i++ * 20), fileName, olc::YELLOW);
+            olc::vi2d pos(10, 70 + (i++ * 20));
+            olc::vi2d bounds(pos.x + 110, pos.y + 13);
+            bool inBound = checkBounds(pos, bounds);
+            if (inBound && GetMouse(olc::Mouse::LEFT).bPressed) {
+                midiTimer.flag = -2;
+                resetActiveNotes();
+                midiTimer.fileName = fileName;
+                midiTimer.isPlaying = true;
+            }
+            DrawStringDecal(pos.x, pos.y, fileName, inBound ? olc::CYAN : olc::YELLOW);
         }
     }
     void drawChannels() {
@@ -638,7 +649,7 @@ private:
         smf::MidiEvent event;
 
         while (midiTimer.index < midifile[0].size()
-            && midiTimer.flag != -1) {
+            && midiTimer.flag != -1 && midiTimer.flag != -2) {
 
             action = true;
             midiTimer.tick();
@@ -705,8 +716,8 @@ public:
     int MemoryManagementThread() {
         while (digitalPiano->midiTimer.flag != -1) {
             if (keyMapper->activeNotesPool.size() > 12) {
-                keyMapper->threadLock.lock();
                 tsf_note_off(soundfile, 0, keyMapper->activeNotesPool.front().keyId + 21);
+                keyMapper->threadLock.lock();
                 keyMapper->activeNotesPool.pop();
                 keyMapper->threadLock.unlock();
             }

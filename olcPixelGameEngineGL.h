@@ -1022,7 +1022,14 @@ namespace olc
 		// Change the blend factor from between 0.0f to 1.0f;
 		void SetPixelBlend(float fBlend);
 
+	public:
+		//user defined functions
 
+		bool checkBounds(olc::vi2d pos, olc::vi2d bounds) {
+			olc::vi2d mousePOS = GetMousePos();
+			if (mousePOS.x > pos.x && mousePOS.x < bounds.x && mousePOS.y > pos.y && mousePOS.y < bounds.y) return true;
+			return false;
+		}
 
 	public: // DRAWING ROUTINES
 		// Draws a single Pixel
@@ -1313,6 +1320,7 @@ namespace olc
 #pragma region pge_implementation
 namespace olc
 {
+
 	// O------------------------------------------------------------------------------O
 	// | olc::Pixel IMPLEMENTATION                                                    |
 	// O------------------------------------------------------------------------------O

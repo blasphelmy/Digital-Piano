@@ -68,7 +68,7 @@ int main()
 {
     setUp                               ();
 
-    MAPPER* keyMapper                   = new MAPPER(soundfile);
+    MAPPER * keyMapper                  = new MAPPER(soundfile);
     DigitalPiano * app                  = new DigitalPiano();
     DigitalPianoController * newPiano   = new DigitalPianoController(app, keyMapper, soundfile);
 
