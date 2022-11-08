@@ -31,7 +31,7 @@ struct vector3d {
 
     template<class Other> vector3d<Other> cast_to() { return vector3d<Other>{ static_cast<Other>(x), static_cast<Other>(y), static_cast<Other>(z) }; };
 
-    void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
+    void setAll         (TYPE xyz)                  { this->x = xyz; this->y = xyz; this->z = xyz; }
 };
 
 typedef vector3d<int> vector3i;
