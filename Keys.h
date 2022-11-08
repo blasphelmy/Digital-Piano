@@ -78,7 +78,7 @@ public:
         this->position.y = _KEYSIZE + (_KEYSIZE * .02f);
         this->size       = Key.size;
         this->size.y     = -1;
-        this->channel    = channel;
+        this->channel    = (char)channel;
         this->isWhite    = Key.isWhite;
     }
 public:

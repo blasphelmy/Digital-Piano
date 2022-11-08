@@ -1023,13 +1023,14 @@ namespace olc
 		void SetPixelBlend(float fBlend);
 
 	public:
+
 		//user defined functions
 
 		bool checkBounds(olc::vi2d pos, olc::vi2d bounds) {
 			olc::vi2d mousePOS = GetMousePos();
 			if (mousePOS.x > pos.x && mousePOS.x < bounds.x && mousePOS.y > pos.y && mousePOS.y < bounds.y) return true;
 			return false;
-		}
+		};
 
 	public: // DRAWING ROUTINES
 		// Draws a single Pixel

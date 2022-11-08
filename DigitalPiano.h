@@ -28,7 +28,7 @@ struct channel {
     bool MUTED = false; bool ACTIVE = false; char channelNum; 
     int drawSelf(olc::PixelGameEngine* parent, MAPPER * keyMapper, int index) { 
         if (ACTIVE) { 
-            olc::vi2d pos(_WINDOW_W - 110, 30 + (index++ * 20));
+            olc::vi2d pos((int)_WINDOW_W - 110, 30 + (index++ * 20));
             olc::vi2d bounds(pos.x + 110, 13 + pos.y);
             olc::Pixel color = !MUTED ? olc::GREEN : olc::RED;
             if (parent->checkBounds(pos, bounds)) {
@@ -41,7 +41,7 @@ struct channel {
                 }
                 color = olc::CYAN;
             }
-            parent->DrawString(pos.x, pos.y, "Channel : " + std::to_string(channelNum), color, _TEXT_SCALE);
+            parent->DrawString(pos.x, pos.y, "Channel : " + std::to_string(channelNum), color, (uint32_t)_TEXT_SCALE);
         }
         return index; 
     };
@@ -54,6 +54,7 @@ public:
             channels[i].channelNum = i;
         }
     };
+    ~Channels() {};
 public:
     std::array<channel, 16> channels;
 private:
@@ -88,32 +89,34 @@ public:
 };
 
 class MidiTimer {
+public:
+    MidiTimer() {};
+    ~MidiTimer() {};
 public: 
     //chrono library is so verbose.
     high_resolution_clock::time_point   start;
     high_resolution_clock::time_point   finish;
     std::set<std::string>               midiFileSet;
     Channels                            Channels;
-    int flag                 = 0;
-    int index                = 0;
-    long long timeSinceStart = 0.0;
-    float speed              = 1.0;
-    float qNotePerSec        = 1.5f;
-    float duration           = 0.f;
-    std::string fileName     = "";
-    bool isPlaying           = false;
-    std::mutex               midiLock;
-    float targetBPM          = 1.5f;
+    int flag                   = 0;
+    int index                  = 0;
+    long double timeSinceStart = 0.0;
+    float speed                = 1.0;
+    float qNotePerSec          = 1.5f;
+    float duration             = 0.f;
+    std::string fileName       = "";
+    bool isPlaying             = false;
+    std::mutex                 midiLock;
+    float targetBPM            = 1.5f;
     void tick() {
         Sleep(1);
         if (speed > 3) speed = 3.0f;
         if (speed < 0) speed = 0.0f;
-        this->finish = high_resolution_clock::now();
+        this->finish         = high_resolution_clock::now();
         this->timeSinceStart = (this->timeSinceStart
-            + (duration_cast<milliseconds>
-                (this->finish - this->start).count() * this->speed)
-            );
-        this->start = high_resolution_clock::now();
+                             + (duration_cast<milliseconds>(this->finish - this->start).count() 
+                             * this->speed));
+        this->start          = high_resolution_clock::now();
     }
 };
 
@@ -122,14 +125,18 @@ protected:
     void DrawStringDecal(float x, float y, std::string text, olc::Pixel color) { olc::PixelGameEngine::DrawStringDecal(olc::vd2d(x, y), text, color); }
 
     vector3i normalizeColorVector(vector3i colorVector, float f, float r_bias = 0.3, float g_bias = 0.6, float b_bias = 0.1) {
-        float r = colorVector.x;
-        float g = colorVector.y;
-        float b = colorVector.z;
-        float L = r_bias * r + g_bias * g + b_bias * b;
+        float r     = (float)colorVector.x;
+        float g     = (float)colorVector.y;
+        float b     = (float)colorVector.z;
+
+        float L     = r_bias * r 
+                    + g_bias * g 
+                    + b_bias * b;
+
         float new_r = r + f * (L - r);
         float new_g = g + f * (L - g);
         float new_b = b + f * (L - b);
-        return vector3i(new_r, new_g, new_b);
+        return vector3i((int)new_r, (int)new_g, (int)new_b);
     };
     
     void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color, float radius) {
@@ -190,20 +197,22 @@ protected:
         if (size.y < 15) {
             size.y = 15;
         }
-        olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
+        olc::vd2d innerRect     = size - (2 * olc::vd2d(radius, radius));
+        
         olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
-        FillRect(innerRect_pos, innerRect, color);
 
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+        FillRect                (innerRect_pos, innerRect, color);
 
-        FillRect(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 1.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
-        FillRect(olc::vd2d(innerRect_pos.x + innerRect.x - 1.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+        FillRect                (olc::vd2d(innerRect_pos.x, innerRect_pos.y - radius), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect                (olc::vd2d(innerRect_pos.x - radius, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
 
-        FillCircle(innerRect_pos, radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 2.f), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y + innerRect.y - 2.f), radius, color);
-        FillCircle(olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y), radius, color);
+        FillRect                (olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 1.f), olc::vd2d(innerRect.x, size.y - innerRect.y - radius), color);
+        FillRect                (olc::vd2d(innerRect_pos.x + innerRect.x - 1.f, innerRect_pos.y), olc::vd2d(size.x - innerRect.x - radius, innerRect.y), color);
+
+        FillCircle              (innerRect_pos, (int32_t)radius, color);
+        FillCircle              (olc::vd2d(innerRect_pos.x, innerRect_pos.y + innerRect.y - 2.f), (int32_t)radius, color);
+        FillCircle              (olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y + innerRect.y - 2.f), (int32_t)radius, color);
+        FillCircle              (olc::vd2d(innerRect_pos.x + innerRect.x - 2.f, innerRect_pos.y), (int32_t)radius, color);
     }
 };
 
@@ -244,8 +253,8 @@ private:
         void setProgressBar     (float timeSinceStart, float duration) { progressBar.x = _WINDOW_W * (timeSinceStart / duration); }
     };
     struct horizontalLine {
-        float y = _KEYSIZE; float left = 0.f; float right = _WINDOW_W;
-        bool drawSelf(olc::PixelGameEngine* parent, double yOffSet) {
+        float y = (float)_KEYSIZE; float left = 0.f; float right = _WINDOW_W;
+        bool drawSelf(olc::PixelGameEngine* parent, float yOffSet) {
             parent->DrawLine(olc::vd2d(this->left, this->y), olc::vd2d(this->right, this->y), olc::Pixel(50, 50, 50));
             this->y -= yOffSet;
             if (this->y > 0) return true;
@@ -262,11 +271,11 @@ private:
 
 public:
     void playSignal(smf::MidiFile & midifile) {
-        midiTimer.qNotePerSec       = midifile.getFileDurationInSeconds()
-                                    / midifile.getFileDurationInTicks()
-                                    * midifile.getTicksPerQuarterNote();
+        midiTimer.qNotePerSec       = (float)midifile.getFileDurationInSeconds()
+                                    / (float)midifile.getFileDurationInTicks()
+                                    * (float)midifile.getTicksPerQuarterNote();
 
-        midiTimer.duration          = midifile.getFileDurationInSeconds();
+        midiTimer.duration          = (float)midifile.getFileDurationInSeconds();
         midiTimer.fileName          = midifile.getFilename();
 
         midiTimer.timeSinceStart    = 0.0;
@@ -333,22 +342,22 @@ private:
 
     void fillInGhost() {
         olc::vd2d mousePOS = GetMousePos();
-        FillRectDecal(olc::vd2d(0.f, 0.f), olc::vi2d(mousePOS.x, 20.f), olc::Pixel(45, 122, 142, 150));
+        FillRectDecal(olc::vd2d(0.f, 0.f), olc::vi2d(mousePOS.x, 20), olc::Pixel(45, 122, 142, 150));
         progressBar.progressBar = olc::vd2d(mousePOS.x, 20.f);
     }
     void fillInSeekRoutine() {
         olc::vd2d mousePOS = GetMousePos();
-        long long newTimeSinceStart = (mousePOS.x / _WINDOW_W) * midiTimer.duration * 1000.f;
+        long double newTimeSinceStart = (mousePOS.x / _WINDOW_W) * midiTimer.duration * 1000.f;
         if (newTimeSinceStart < midiTimer.timeSinceStart) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
-            SeekRoutine(-1, (midiTimer.timeSinceStart - newTimeSinceStart));
+            SeekRoutine(-1, (float)(midiTimer.timeSinceStart - newTimeSinceStart));
             midiTimer.midiLock.unlock();
         }
         else {
             midiTimer.midiLock.lock();
             midiTimer.flag = 2;
-            SeekRoutine(1, (newTimeSinceStart - midiTimer.timeSinceStart));
+            SeekRoutine(1, (float)(newTimeSinceStart - midiTimer.timeSinceStart));
             midiTimer.midiLock.unlock();
         }
 
@@ -359,7 +368,7 @@ private:
         return velocity == 0 ? olc::Pixel(25, 25, 25) : getDrawingColor(isWhite, note);
     }
     olc::Pixel getDrawingColor(bool isWhite, std::string& note) {
-        vector3f darkMask(isWhite ? .8 : .6);
+        vector3f darkMask(isWhite ? .8f : .6f);
         vector3i color = colorMap[note];
         color = color * darkMask;
         return olc::Pixel(color.x, color.y, color.z);
@@ -379,7 +388,7 @@ private:
             midiTimer.midiLock.unlock();
         }
         if (GetKey(olc::SPACE).bPressed) {
-            midiTimer.speed = (midiTimer.speed > 0 ? 0.0 : 1.0);
+            midiTimer.speed = (midiTimer.speed > 0.f ? 0.0f : 1.0f);
         }
         if (GetKey(olc::Key::UP).bPressed) {
             midiTimer.speed = midiTimer.speed + .1f;
@@ -404,7 +413,7 @@ private:
                 midiTimer.fileName = fileName;
                 midiTimer.isPlaying = true;
             }
-            DrawStringDecal(pos.x, pos.y, fileName, inBound ? olc::CYAN : olc::YELLOW);
+            DrawStringDecal((float)pos.x, (float)pos.y, fileName, inBound ? olc::CYAN : olc::YELLOW);
         }
     }
     void drawChannels() {
@@ -419,7 +428,7 @@ private:
         vector3i colorVector(color.r, color.g, color.b);
         if (!midiTimer.Channels.checkChannel(note->channel)) {
 
-            colorVector = normalizeColorVector(colorVector, .9);
+            colorVector = normalizeColorVector(colorVector, .9f);
         }
         FillRoundedRect(note->position, note->size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z), 4);
         if(detached) olc::PixelGameEngine::DrawStringDecal(note->position + olc::vd2d(3, 1), std::to_string(note->channel), olc::Pixel(0, 0, 0, 255));
@@ -434,7 +443,7 @@ private:
         double yOffSet = timeElasped * 100.f * midiTimer.speed;
         std::queue<FlyingNotes> newOnScreenElementsQueue;
         std::queue<horizontalLine> newHorizontalLinesQueue;
-        timeAccumalator += timeElasped * midiTimer.speed;
+        timeAccumalator += (float)timeElasped * midiTimer.speed;
 
         if (timeAccumalator > midiTimer.qNotePerSec) {
             timeAccumalator = 0.f;
@@ -444,7 +453,7 @@ private:
         while (!scrollingLines.empty()) {
             horizontalLine line = scrollingLines.front();
             scrollingLines.pop();
-            if (line.drawSelf(this, yOffSet)) newHorizontalLinesQueue.push(line);
+            if (line.drawSelf(this, (float)yOffSet)) newHorizontalLinesQueue.push(line);
         }
         scrollingLines = newHorizontalLinesQueue;
 
@@ -484,7 +493,7 @@ private:
     }
     
     void ProcessBarEvents() {
-        progressBar.setProgressBar(midiTimer.timeSinceStart / 1000.f, midiTimer.duration);
+        progressBar.setProgressBar((float)midiTimer.timeSinceStart / 1000.f, midiTimer.duration);
         FillRectDecal(progressBar.pos, progressBar.bg, olc::Pixel(45, 45, 45));
         FillRectDecal(progressBar.pos, progressBar.progressBar, progressBar.fillColor);
         
@@ -575,7 +584,7 @@ private:
 public: 
     int ConstructGUI() {
         digitalPiano->connectMapper(keyMapper);
-        if (digitalPiano->Construct(_WINDOW_W, _WINDOW_H, 1, 1))
+        if (digitalPiano->Construct((int32_t)_WINDOW_W, (int32_t)_WINDOW_H, 1, 1))
             digitalPiano->Start();
         return 0;
     }
@@ -604,7 +613,7 @@ public:
     int MidiInputThread() {
         RtMidiIn* midiin = new RtMidiIn();
         std::vector<unsigned char> message;
-        int nBytes, i;
+        size_t nBytes;
         double stamp;
         unsigned int nPorts = midiin->getPortCount();
 

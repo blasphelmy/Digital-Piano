@@ -95,29 +95,29 @@ public:
         initialPos = olc::vd2d(slice * 2.5 + 3.f, _KEYSIZE);
         for (int y = 53; y < 88; y = y + 5) {
 
-            key k1(false, blackKeySize);
-            k1.name = std::string("C");
-            key k2(false, blackKeySize);
-            k2.name = std::string("D");
-            key k3(false, blackKeySize);
-            k3.name = std::string("F");
-            key k4(false, blackKeySize);
-            k4.name = std::string("G");
-            key k5(false, blackKeySize);
-            k5.name = std::string("A");
+            key k1        (false, blackKeySize);
+            k1.name       = std::string("C");
+            key k2        (false, blackKeySize);
+            k2.name       = std::string("D");
+            key k3        (false, blackKeySize);
+            k3.name       = std::string("F");
+            key k4        (false, blackKeySize);
+            k4.name       = std::string("G");
+            key k5        (false, blackKeySize);
+            k5.name       = std::string("A");
 
-            k1.position  = initialPos;
-            initialPos.x = initialPos.x + slice;
-            k2.position  = initialPos;
-            initialPos.x = initialPos.x + (2 * slice);
-            k3.position  = initialPos;
-            initialPos.x = initialPos.x + slice;
-            k4.position  = initialPos;
-            initialPos.x = initialPos.x + slice;
-            k5.position  = initialPos;
-            initialPos.x = initialPos.x + (2 * slice);
+            k1.position   = initialPos;
+            initialPos.x  = initialPos.x + slice;
+            k2.position   = initialPos;
+            initialPos.x  = initialPos.x + (2 * slice);
+            k3.position   = initialPos;
+            initialPos.x  = initialPos.x + slice;
+            k4.position   = initialPos;
+            initialPos.x  = initialPos.x + slice;
+            k5.position   = initialPos;
+            initialPos.x  = initialPos.x + (2 * slice);
 
-            keyMap[y] = k1;
+            keyMap[y]     = k1;
             keyMap[y + 1] = k2;
             keyMap[y + 2] = k3;
             keyMap[y + 3] = k4;

@@ -38,11 +38,11 @@ void setUp() {
     MONITORINFOEX monitorInfoEx;
     monitorInfoEx.cbSize        = sizeof(monitorInfoEx);
     GetMonitorInfo              (monitor, &monitorInfoEx);
-    float cxLogical             = monitorInfoEx.rcMonitor.right - monitorInfoEx.rcMonitor.left;
-    float cyLogical             = monitorInfoEx.rcMonitor.bottom - monitorInfoEx.rcMonitor.top;
+    float cxLogical             = (float)monitorInfoEx.rcMonitor.right - (float)monitorInfoEx.rcMonitor.left;
+    float cyLogical             = (float)monitorInfoEx.rcMonitor.bottom - (float)monitorInfoEx.rcMonitor.top;
 
-    _WINDOW_W                   = (float)cxLogical * .75;
-    _WINDOW_H                   = (float)cyLogical * .75;
+    _WINDOW_W                   = (float)cxLogical * .75f;
+    _WINDOW_H                   = (float)cyLogical * .75f;
     if ((int)_WINDOW_W % 52 != 0) _WINDOW_W += 52 - ((int)_WINDOW_W % 52);
     _KEYSIZE                    = _WINDOW_H / 1.2272727273;
     _TEXT_SCALE                 = 1;
@@ -55,7 +55,7 @@ void setUp() {
     OutputAudioSpec.channels    = 2;
     OutputAudioSpec.samples     = 1024;
     OutputAudioSpec.callback    = AudioCallback;
-    int dcbGain                 = 0;
+    float dcbGain               = 0.f;
 
     SDL_AudioInit               (NULL);
     soundfile                   = tsf_load_filename("soundfile_1.sf2");

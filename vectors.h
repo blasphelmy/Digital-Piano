@@ -150,9 +150,9 @@ struct vector3i {
     }
     vector3i operator * (vector3f const& obj) {
         vector3i result;
-        result.x = x * (float)obj.x;
-        result.y = y * (float)obj.y;
-        result.z = z * (float)obj.z;
+        result.x = (int)((float)x * (float)obj.x);
+        result.y = (int)((float)y * (float)obj.y);
+        result.z = (int)((float)z * (float)obj.z);
         return result;
     }
     vector3i operator * (vector3i const& obj) {
@@ -201,9 +201,9 @@ struct vector4i {
     }
     vector4i operator * (vector3f const& obj) {
         vector4i result;
-        result.x = x * (float)obj.x;
-        result.y = y * (float)obj.y;
-        result.z = z * (float)obj.z;
+        result.x = (int)((float)x * (float)obj.x);
+        result.y = (int)((float)y * (float)obj.y);
+        result.z = (int)((float)z * (float)obj.z);
         return result;
     }
     vector4i operator * (vector4i const& obj) {
