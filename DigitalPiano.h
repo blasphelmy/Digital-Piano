@@ -11,8 +11,6 @@
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-#include <signal.h>
-#include <thread>
 #include <map>
 #include <unordered_map>
 #include <queue>
@@ -369,7 +367,7 @@ private:
     }
     olc::Pixel getDrawingColor(bool isWhite, std::string& note) {
         vector3f darkMask(isWhite ? .8f : .6f);
-        vector3i color = colorMap[note];
+        vector3f color = colorMap[note].cast_to<float>();
         color = color * darkMask;
         return olc::Pixel(color.x, color.y, color.z);
     }
@@ -396,6 +394,7 @@ private:
         if (GetKey(olc::Key::DOWN).bPressed) {
             midiTimer.speed = midiTimer.speed - .1f;
         }
+
         return 0;
     }
 
@@ -517,7 +516,7 @@ public:
     }
     ~DigitalPianoController() {};
 private: 
-    smf::MidiFile getMidiFileRoutine(std::string& fileName) {
+    smf::MidiFile getMidiFileRoutine(std::string & fileName) {
         smf::MidiFile newMidiFile("./MIDIFILES/" + fileName);
         newMidiFile.doTimeAnalysis();
         newMidiFile.linkNotePairs();
@@ -525,7 +524,7 @@ private:
         digitalPiano->midiTimer.Channels.setChannels(newMidiFile);
         return newMidiFile;
     }
-    bool playMidi(std::string& fileName) {
+    bool playMidi(std::string & fileName) {
 
         bool action = false;
         smf::MidiFile midifile = getMidiFileRoutine(fileName);
@@ -624,7 +623,6 @@ public:
         midiin->ignoreTypes(false, false, false);
 
         while (digitalPiano->midiTimer.flag != -1) {
-            stamp = midiin->getMessage(&message);
             nBytes = message.size();
             if (nBytes > 1) {
                 //144 keys 176 pedals

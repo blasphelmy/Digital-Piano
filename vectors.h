@@ -18,6 +18,25 @@
 #include <mutex>
 
 template <class TYPE>
+struct vector3d {
+    TYPE x, y, z;
+    vector3d(TYPE x, TYPE y, TYPE z) { this->x = x; this->y = y; this->z = z; }
+    vector3d(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
+    vector3d() { this->x = 0; this->y = 0; this->z = 0; }
+    ~vector3d() {}
+    vector3d operator + (vector3d const& obj) { vector3d result; result.x = x + obj.x; result.y = y + obj.y; result.z = z + obj.z; return result; }
+    vector3d operator - (vector3d const& obj) { vector3d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
+    vector3d operator * (vector3d const& obj) { vector3d result; result.x = x * obj.x; result.y = y * obj.y; result.z = z * obj.z; return result; }
+    vector3d operator / (vector3d const& obj) { vector3d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
+    template<class Other> vector3d<Other> cast_to() { return vector3d<Other>{ static_cast<Other>(x), static_cast<Other>(y), static_cast<Other>(z) }; };
+    void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
+};
+
+typedef vector3d<int> vector3i;
+typedef vector3d<float> vector3f;
+
+
+template <class TYPE>
 struct vector2d_generic {
     TYPE x;
     TYPE y;
@@ -56,121 +75,6 @@ struct vector2d_generic {
     }
 };
 
-template <class TYPE>
-struct vector3d {
-    TYPE x;
-    TYPE y;
-    vector3d(TYPE x, TYPE y, TYPE z) {
-        this->x = x;
-        this->y = y;
-    }
-    vector3d() {
-        this->x = 0;
-        this->y = 0;
-    }
-    ~vector3d() {}
-    vector3d operator + (vector3d const& obj) {
-        vector3d result;
-        result.x = x + obj.x;
-        result.y = y + obj.y;
-        return result;
-    }
-    vector3d operator - (vector3d const& obj) {
-        vector3d result;
-        result.x = x - obj.x;
-        result.y = y - obj.y;
-        return result;
-    }
-    vector3d operator * (vector3d const& obj) {
-        vector3d result;
-        result.x = x * obj.x;
-        result.y = y * obj.y;
-        return result;
-    }
-    vector3d operator / (vector3d const& obj) {
-        vector3d result;
-        result.x = x / obj.x;
-        result.y = y / obj.y;
-        return result;
-    }
-};
-
-struct vector3f {
-    float x, y, z;
-    vector3f(float F) {
-        this->x = F;
-        this->y = F;
-        this->z = F;
-    }
-    vector3f(float x, float y, float z) {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }
-    vector3f() {
-        this->x = 0;
-        this->y = 0;
-        this->z = 0;
-    }
-
-    ~vector3f() {}
-    void setAll(float xyz) {
-        this->x = xyz;
-        this->y = xyz;
-        this->z = xyz;
-    }
-};
-
-struct vector3i {
-    int x, y, z;
-    vector3i(int x, int y, int z) {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }
-    vector3i() {
-        this->x = 0;
-        this->y = 0;
-        this->z = 0;
-    }
-    ~vector3i() {}
-    vector3i operator + (vector3i const& obj) {
-        vector3i result;
-        result.x = x + obj.x;
-        result.y = y + obj.y;
-        result.z = z + obj.z;
-        return result;
-    }
-    vector3i operator - (vector3i const& obj) {
-        vector3i result;
-        result.x = x - obj.x;
-        result.y = y - obj.y;
-        result.z = z - obj.z;
-        return result;
-    }
-    vector3i operator * (vector3f const& obj) {
-        vector3i result;
-        result.x = (int)((float)x * (float)obj.x);
-        result.y = (int)((float)y * (float)obj.y);
-        result.z = (int)((float)z * (float)obj.z);
-        return result;
-    }
-    vector3i operator * (vector3i const& obj) {
-        vector3i result;
-        result.x = x * obj.x;
-        result.y = y * obj.y;
-        result.z = z * obj.z;
-        return result;
-    }
-    vector3i operator / (vector3i const& obj) {
-        vector3i result;
-        result.x = x / obj.x;
-        result.y = y / obj.y;
-        result.z = z / obj.z;
-        return result;
-    }
-};
-
 struct vector4i {
     int x, y, z, a;
     vector4i(int x, int y, int z, int a) {
@@ -183,6 +87,7 @@ struct vector4i {
         this->x = 0;
         this->y = 0;
         this->z = 0;
+        this->a = 0;
     }
     ~vector4i() {}
     vector4i operator + (vector4i const& obj) {
@@ -201,9 +106,9 @@ struct vector4i {
     }
     vector4i operator * (vector3f const& obj) {
         vector4i result;
-        result.x = (int)((float)x * (float)obj.x);
-        result.y = (int)((float)y * (float)obj.y);
-        result.z = (int)((float)z * (float)obj.z);
+        result.x = x * (float)obj.x;
+        result.y = y * (float)obj.y;
+        result.z = z * (float)obj.z;
         return result;
     }
     vector4i operator * (vector4i const& obj) {
