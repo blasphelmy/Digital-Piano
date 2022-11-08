@@ -28,11 +28,12 @@ struct vector3d {
     vector3d operator - (vector3d const& obj)       { vector3d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
     vector3d operator * (vector3d const& obj)       { vector3d result; result.x = x * obj.x; result.y = y * obj.y; result.z = z * obj.z; return result; }
     vector3d operator / (vector3d const& obj)       { vector3d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
+    void setAll         (TYPE xyz)                  { this->x = xyz; this->y = xyz; this->z = xyz; }
 
     template<class Other> vector3d<Other> cast_to() { return vector3d<Other>{ static_cast<Other>(x), static_cast<Other>(y), static_cast<Other>(z) }; };
-
-    void setAll         (TYPE xyz)                  { this->x = xyz; this->y = xyz; this->z = xyz; }
 };
 
-typedef vector3d<int> vector3i;
-typedef vector3d<float> vector3f;
+typedef vector3d<int>         vector3i;
+typedef vector3d<float>       vector3f;
+typedef vector3d<long double> vector3Ld;
+typedef vector3d<uint16_t>    vector3Uint16t;
