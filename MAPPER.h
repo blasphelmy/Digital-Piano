@@ -26,7 +26,6 @@ public:
     tsf*                                    soundFile = nullptr;
     bool                                    pedal = false;
     std::mutex                              threadLock;
-
 public:
     MAPPER(tsf * soundFile) {
         this->soundFile = soundFile;

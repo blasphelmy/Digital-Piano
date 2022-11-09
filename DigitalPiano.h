@@ -18,6 +18,7 @@
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
+using std::chrono::seconds;
 
 struct channel { 
     bool MUTED = false; bool ACTIVE = false; char channelNum; 
@@ -102,7 +103,7 @@ public:
     std::mutex                 midiLock;
     float targetBPM            = 1.5f;
     void tick() {
-        Sleep(1);
+        std::this_thread::sleep_for(milliseconds(1));
         if (speed > 3) speed = 3.0f;
         if (speed < 0) speed = 0.0f;
         this->finish         = high_resolution_clock::now();
@@ -599,7 +600,7 @@ public:
                 keyMapper->activeNotesPool.pop();
                 keyMapper->threadLock.unlock();
             }
-            Sleep(1);
+            std::this_thread::sleep_for(milliseconds(1));
         }
         return 0;
     }
@@ -621,7 +622,7 @@ public:
                 //144 keys 176 pedals
                 keyMapper->setKeyState_PIANO((int)message[0], (int)message[1] - 21, (int)message[2], digitalPiano->midiTimer.Channels.checkChannel((short)message[0] & 0x0f));
             }
-            Sleep(1);
+            std::this_thread::sleep_for(milliseconds(1));
         }
     cleanup:
         delete midiin;
@@ -645,7 +646,7 @@ public:
                 }
             }
             digitalPiano->midiTimer.midiLock.unlock();
-            Sleep(5000);
+            std::this_thread::sleep_for(seconds(2));
         }
 
         return 0;
