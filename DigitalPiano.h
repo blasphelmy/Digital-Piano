@@ -94,16 +94,16 @@ public:
     high_resolution_clock::time_point   finish;
     std::set<std::string>               midiFileSet;
     Channels                            Channels;
-    int flag = 0;
-    int index = 0;
-    long double timeSinceStart = 0.0;
-    float speed = 1.0;
-    float qNotePerSec = 1.5f;
-    float duration = 0.f;
-    std::string fileName = "";
-    bool isPlaying = false;
-    std::mutex                 midiLock;
-    float targetBPM = 1.5f;
+    int                                 flag = 0;
+    int                                 index = 0;
+    long double                         timeSinceStart = 0.0;
+    float                               speed = 1.0;
+    float                               qNotePerSec = 1.5f;
+    float                               duration = 0.f;
+    std::string                         fileName = "";
+    bool                                isPlaying = false;
+    std::mutex                          midiLock;
+    float                               targetBPM = 1.5f;
     void tick() {
         std::this_thread::sleep_for(milliseconds(1));
         if (speed > 3) speed = 3.0f;
@@ -221,13 +221,13 @@ public:
     }
 private:
     bool OnUserCreate() override {
-        colorMap["C"] = vector3di8t(254, 0, 0);
-        colorMap["D"] = vector3di8t(45, 122, 142);
-        colorMap["E"] = vector3di8t(251, 133, 39);
-        colorMap["F"] = vector3di8t(146, 209, 79);
+        colorMap["C"] = vector3di8t(254,   0,   0);
+        colorMap["D"] = vector3di8t( 45, 122, 142);
+        colorMap["E"] = vector3di8t(251, 133,  39);
+        colorMap["F"] = vector3di8t(146, 209,  79);
         colorMap["G"] = vector3di8t(255, 255, 113);
-        colorMap["A"] = vector3di8t(107, 60, 200);
-        colorMap["B"] = vector3di8t(209, 79, 205);
+        colorMap["A"] = vector3di8t(107,  60, 200);
+        colorMap["B"] = vector3di8t(209,  79, 205);
         return true;
     }
 private:
@@ -241,10 +241,10 @@ public:
     MidiTimer midiTimer;
 private:
     struct ProgressBar {
-        olc::vd2d bg = olc::vd2d(_WINDOW_W, ProgressBarHeight);
-        olc::vd2d progressBar = olc::vd2d(0, ProgressBarHeight);
-        olc::vd2d pos = olc::vd2d(0, 0);
-        olc::Pixel fillColor = olc::Pixel(33, 148, 58);
+        olc::vd2d bg            = olc::vd2d(_WINDOW_W, ProgressBarHeight);
+        olc::vd2d progressBar   = olc::vd2d(0, ProgressBarHeight);
+        olc::vd2d pos           = olc::vd2d(0, 0);
+        olc::Pixel fillColor    = olc::Pixel(33, 148, 58);
         void resetProgressBar() { progressBar.x = progressBar.y = 0; }
         void setProgressBar(float timeSinceStart, float duration) { progressBar.x = _WINDOW_W * (timeSinceStart / duration); }
     };
@@ -266,26 +266,26 @@ private:
 
 public:
     void playSignal(smf::MidiFile& midifile) {
-        midiTimer.qNotePerSec = (float)midifile.getFileDurationInSeconds()
-            / (float)midifile.getFileDurationInTicks()
-            * (float)midifile.getTicksPerQuarterNote();
+        midiTimer.qNotePerSec    = (float)midifile.getFileDurationInSeconds()
+                                 / (float)midifile.getFileDurationInTicks()
+                                 * (float)midifile.getTicksPerQuarterNote();
 
-        midiTimer.duration = (float)midifile.getFileDurationInSeconds();
-        midiTimer.fileName = midifile.getFilename();
+        midiTimer.duration       = (float)midifile.getFileDurationInSeconds();
+        midiTimer.fileName       = midifile.getFilename();
 
         midiTimer.timeSinceStart = 0.0;
-        timeAccumalator = 0.f;
-        keyMapper->pedal = true;
-        midiTimer.flag = 0;
+        timeAccumalator          = 0.f;
+        keyMapper->pedal         = true;
+        midiTimer.flag           = 0;
 
         if (midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
 
-        midiTimer.index = 0;
-        midiTimer.start = high_resolution_clock::now();
+        midiTimer.index          = 0;
+        midiTimer.start          = high_resolution_clock::now();
     }
     void reset() {
         tsf_note_off_all(keyMapper->soundFile);
-        if (midiTimer.flag != -2)    midiTimer.isPlaying = false;
+        if (midiTimer.flag != -2) midiTimer.isPlaying = false;
         midiTimer.timeSinceStart = 0.0;
         midiTimer.Channels.resetChannels();
         keyMapper->flushActiveNotes();
