@@ -1,5 +1,9 @@
 # Digital-Piano
 
+# An synthesizer for your digital piano and to read and playback midifiles
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/Vh8YSFNn-yQ/0.jpg)](http://www.youtube.com/watch?v=Vh8YSFNn-yQ "Video Title")
+
 ## Required
 an sf2 sound file. Heres one that will work. 
 
@@ -7,14 +11,13 @@ an sf2 sound file. Heres one that will work.
 
 rename to soundfile_1.sf2 and place in project directory.
 
-In main, adjust the gain through dcbGain.
 
 ### build for x64 release
-
-Hold shift to enter in a name of an available midi file then press shift + enter to begin playing
 
 Up/down arrows to adjust playback speed
 
 Left/Right arrows to skip forward and backwords.
+
+Spacebar to pause a song
 
 You can also use a standard 88 key keyboard with this app.
