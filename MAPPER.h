@@ -18,7 +18,7 @@ struct activeNotes {
 
 class MAPPER {
 public:
-    std::array<key, 88>                     keyMap;
+    std::array<key, keyboardSize>           keyMap;
     std::unordered_map<int, int>            keyIdMap_PIANO;
     std::unordered_map<int, FlyingNotes* >  activelyDrawing;
     std::queue<FlyingNotes>                 onScreenNoteElements;
@@ -32,12 +32,12 @@ public:
         //set up white keys
         //index 0-51 : white keys
         //index 52-87 : black keys
-        double slice            = _WINDOW_W / 52.f;
-        std::string abc         = "ABCDEFG";
-        olc::vd2d whiteKeySize  (_WINDOW_W / 52.f, _WINDOW_H / 5.4);
-        olc::vd2d blackKeySize  (_WINDOW_W / 70.f, _WINDOW_H / 8.31);
-        olc::vd2d initialPos    (0, _KEYSIZE);
-        olc::vd2d offSet        (slice, 0);
+        double slice            = _WINDOW_W / (float)numWhiteKeys;
+        std::string abc = "ABCDEFG";
+        olc::vd2d whiteKeySize(slice, _WINDOW_H / 5.4);
+        olc::vd2d blackKeySize(_WINDOW_W / 70.f, _WINDOW_H / 8.31);
+        olc::vd2d initialPos(0, _KEYSIZE);
+        olc::vd2d offSet(slice, 0);
         keyIdMap_PIANO = {
             //white keys
             { 0,  0},{ 2,  1},{ 3,  2},{ 5,  3},
@@ -67,13 +67,13 @@ public:
 
         };
         int i = 0;
-        while (i < 52) {
+        while (i < numWhiteKeys) {
             key newKey(std::string(1, abc.at(i % 7)), true, initialPos, whiteKeySize);
             initialPos = initialPos + offSet;
             keyMap[i] = newKey;
             i++;
         }
-        i = 52;
+        i = numWhiteKeys;
         //create first a# key
         key newKey(false, blackKeySize);
         newKey.name = std::string("A");
@@ -81,7 +81,7 @@ public:
         keyMap[i] = newKey;
         //create the subsequent groups of 5 black keys
         initialPos = olc::vd2d(slice * 2.5 + 3.f, _KEYSIZE);
-        for (int y = 53; y < 88; y = y + 5) {
+        for (int y = numWhiteKeys + 1; y < keyboardSize; y = y + 5) {
 
             key k1        (false, blackKeySize);
             k1.name       = std::string("C");
@@ -132,7 +132,7 @@ public:
                 newqueue.push(note);
             }
             else {
-                tsf_note_off(soundFile, 0, note.keyId + 21);
+                tsf_note_off(soundFile, 0, note.keyId + keyMapOffset);
             }
         }
         activeNotesPool = newqueue;
@@ -142,7 +142,7 @@ public:
         if (cat >= 0x80 && cat < 0x8f) velocity = 0;
         if (cat >= 0x80 && cat < 0x8f || cat >= 0x90 && cat < 0x9f) {
             if (velocity != 0 && (cat >= 0x90 && cat < 0x9f)) {
-                if(channelOn) tsf_note_on(soundFile, 0, keyId + 21, static_cast<float>(velocity / 256.f));
+                if (channelOn) tsf_note_on(soundFile, 0, keyId + keyMapOffset, static_cast<float>(velocity / 256.f));
                 activeNotesPool.push(activeNotes(0, keyId));
                 key thisKey = keyMap[keyIdMap_PIANO[keyId]];
                 FlyingNotes* newFlyingNote = createFlyingNote(thisKey, (short)cat & 0x0f);
@@ -156,7 +156,7 @@ public:
                 if (keyMap[keyIdMap_PIANO[keyId]].velocity > 0)
                     activelyDrawing.erase(keyIdMap_PIANO[keyId]);
                 if (!pedal && channelOn)
-                    tsf_note_off(soundFile, 0, keyId + 21);
+                    tsf_note_off(soundFile, 0, keyId + keyMapOffset);
             }
             keyMap[keyIdMap_PIANO[keyId]].velocity = velocity;
         }
