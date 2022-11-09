@@ -2,16 +2,13 @@
 #include "GLOBALVARIABLES.h"
 #include "olcPixelGameEngineGL.h"
 #include "tsf.h"
-#include "minisdl_audio.h"
 #include "MidiFile.h"
 #include "RtMidi.h"
-#include "Options.h"
 #include "MAPPER.h"
 #include "Keys.h"
 #include "vectors.h"
 #include <iostream>
 #include <chrono>
-#include <map>
 #include <unordered_map>
 #include <queue>
 #include <mutex>
@@ -48,9 +45,7 @@ struct channel {
 class Channels {
 public:
     Channels() {
-        for (int i = 0; i < 16; i++) {
-            channels[i].channelNum = i;
-        }
+        for (int i = 0; i < 16; i++) channels[i].channelNum = i;
     };
     ~Channels() {};
 public:
@@ -223,13 +218,13 @@ public:
     }
 private: 
     bool OnUserCreate() override {
-        colorMap["C"] = vector3i(254, 0, 0);
-        colorMap["D"] = vector3i(45, 122, 142);
-        colorMap["E"] = vector3i(251, 133, 39);
-        colorMap["F"] = vector3i(146, 209, 79);
-        colorMap["G"] = vector3i(255, 255, 113);
-        colorMap["A"] = vector3i(107, 60, 200);
-        colorMap["B"] = vector3i(209, 79, 205);
+        colorMap["C"] = vector3di8t(254,   0,   0);
+        colorMap["D"] = vector3di8t( 45, 122, 142);
+        colorMap["E"] = vector3di8t(251, 133,  39);
+        colorMap["F"] = vector3di8t(146, 209,  79);
+        colorMap["G"] = vector3di8t(255, 255, 113);
+        colorMap["A"] = vector3di8t(107,  60, 200);
+        colorMap["B"] = vector3di8t(209,  79, 205);
         return true;
     }
 private:
@@ -251,7 +246,7 @@ private:
         void setProgressBar     (float timeSinceStart, float duration) { progressBar.x = _WINDOW_W * (timeSinceStart / duration); }
     };
     struct horizontalLine {
-        float y = (float)_KEYSIZE; float left = 0.f; float right = _WINDOW_W;
+        float y = (float)_KEYSIZE; float left = 0.f; float right = (float)_WINDOW_W;
         bool drawSelf(olc::PixelGameEngine* parent, float yOffSet) {
             parent->DrawLine(olc::vd2d(this->left, this->y), olc::vd2d(this->right, this->y), olc::Pixel(50, 50, 50));
             this->y -= yOffSet;
@@ -260,12 +255,11 @@ private:
         }
     };
 private:
-    std::unordered_map<std::string, vector3i> colorMap;
-    std::queue<horizontalLine>                scrollingLines;
-    ProgressBar                               progressBar;
-    float                                     timeAccumalator = 500.f;
-    float                                     targetBPM = 1.5f;
-    void*                                     thread;
+    std::unordered_map<std::string, vector3di8t> colorMap;
+    std::queue<horizontalLine>                   scrollingLines;
+    ProgressBar                                  progressBar;
+    float                                        timeAccumalator = 500.f;
+    float                                        targetBPM = 1.5f;
 
 public:
     void playSignal(smf::MidiFile & midifile) {
@@ -369,7 +363,7 @@ private:
         vector3f darkMask(isWhite ? .8f : .6f);
         vector3f color = colorMap[note].cast_to<float>();
         color = color * darkMask;
-        return olc::Pixel(color.x, color.y, color.z);
+        return olc::Pixel((uint8_t)color.x, (uint8_t)color.y, (uint8_t)color.z);
     }
 
     int keyListeners() {
@@ -460,7 +454,7 @@ private:
 
             FlyingNotes onscreenKey = keyMapper->onScreenNoteElements.front();
             keyMapper->onScreenNoteElements.pop();
-            drawFlyingNote(onscreenKey, true);
+            if (midiTimer.Channels.checkChannel(onscreenKey.channel)) drawFlyingNote(onscreenKey, true);
             onscreenKey.position.y -= yOffSet;
             if (onscreenKey.position.y + onscreenKey.size.y > 0)
                 newOnScreenElementsQueue.push(onscreenKey);
@@ -470,7 +464,7 @@ private:
             if (i == 52) FillRect(olc::vd2d(0.f, _KEYSIZE), olc::vd2d(_WINDOW_W, 5.f), olc::Pixel(82, 38, 38));
             if (keyMapper->activelyDrawing.count(i) > 0) {
                 FlyingNotes* drawnKey = keyMapper->activelyDrawing.find(i)->second;
-                drawFlyingNote(drawnKey, false);
+                if(midiTimer.Channels.checkChannel(drawnKey->channel)) drawFlyingNote(drawnKey, false);
                 drawnKey->size.y += yOffSet;
                 drawnKey->position.y -= yOffSet;
             }
@@ -613,7 +607,6 @@ public:
         RtMidiIn* midiin = new RtMidiIn();
         std::vector<unsigned char> message;
         size_t nBytes;
-        double stamp;
         unsigned int nPorts = midiin->getPortCount();
 
         if (nPorts == 0) {

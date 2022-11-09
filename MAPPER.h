@@ -1,19 +1,8 @@
 #pragma once
 #include "GLOBALVARIABLES.h"
-#include "olcPixelGameEngineGL.h"
 #include "tsf.h"
-#include "minisdl_audio.h"
-#include "MidiFile.h"
-#include "RtMidi.h"
-#include "Options.h"
-#include "DigitalPiano.h"
 #include "Keys.h"
 #include "vectors.h"
-#include <iostream>
-#include <chrono>
-#include <signal.h>
-#include <thread>
-#include <map>
 #include <unordered_map>
 #include <queue>
 #include <mutex>
@@ -34,7 +23,7 @@ public:
     std::unordered_map<int, FlyingNotes* >  activelyDrawing;
     std::queue<FlyingNotes>                 onScreenNoteElements;
     std::queue<activeNotes>                 activeNotesPool;
-    tsf* soundFile =                        nullptr;
+    tsf*                                    soundFile = nullptr;
     bool                                    pedal = false;
     std::mutex                              threadLock;
 
@@ -44,38 +33,38 @@ public:
         //set up white keys
         //index 0-51 : white keys
         //index 52-87 : black keys
-        double          slice = _WINDOW_W / 52.f;
-        olc::vd2d       whiteKeySize(_WINDOW_W / 52.f, _WINDOW_H / 5.4);
-        olc::vd2d       blackKeySize(_WINDOW_W / 70.f, _WINDOW_H / 8.3076923);
-        std::string     abc = "ABCDEFG";
-        olc::vd2d       initialPos(0, _KEYSIZE);
-        olc::vd2d       offSet(slice, 0);
+        double slice            = _WINDOW_W / 52.f;
+        std::string abc         = "ABCDEFG";
+        olc::vd2d whiteKeySize  (_WINDOW_W / 52.f, _WINDOW_H / 5.4);
+        olc::vd2d blackKeySize  (_WINDOW_W / 70.f, _WINDOW_H / 8.31);
+        olc::vd2d initialPos    (0, _KEYSIZE);
+        olc::vd2d offSet        (slice, 0);
         keyIdMap_PIANO = {
             //white keys
-            {0, 0},{2, 1},{3, 2},{5, 3},{7, 4},
-            {8, 5},{10, 6},{12, 7},{14, 8},{15, 9},
-            {17, 10},{19, 11},{20, 12},{22, 13},
-            {24, 14},{26, 15},{27, 16},{29, 17},
-            {31, 18},{32, 19},{34, 20},{36, 21},
-            {38, 22},{39, 23},{41, 24},{43, 25},
-            {44, 26},{46, 27},{48, 28},{50, 29},
-            {51, 30},{53, 31},{55, 32},{56, 33},
-            {58, 34},{60, 35},{62, 36},{63, 37},
-            {65, 38},{67, 39},{68, 40},{70, 41},
-            {72, 42},{74, 43},{75, 44},{77, 45},
-            {79, 46},{80, 47},{82, 48},{84, 49},
-            {86, 50},{87, 51},
+            { 0,  0},{ 2,  1},{ 3,  2},{ 5,  3},
+            { 7,  4},{ 8,  5},{10,  6},{12,  7},
+            {14,  8},{15,  9},{17, 10},{19, 11},
+            {20, 12},{22, 13},{24, 14},{26, 15},
+            {27, 16},{29, 17},{31, 18},{32, 19},
+            {34, 20},{36, 21},{38, 22},{39, 23},
+            {41, 24},{43, 25},{44, 26},{46, 27},
+            {48, 28},{50, 29},{51, 30},{53, 31},
+            {55, 32},{56, 33},{58, 34},{60, 35},
+            {62, 36},{63, 37},{65, 38},{67, 39},
+            {68, 40},{70, 41},{72, 42},{74, 43},
+            {75, 44},{77, 45},{79, 46},{80, 47},
+            {82, 48},{84, 49},{86, 50},{87, 51},
 
             //black keys
-            {1, 52},{4, 53},{6, 54},{9, 55},{11, 56},
-            {13, 57},{16, 58},{18, 59},{21, 60},
-            {23, 61},{25, 62},{28, 63},{30, 64},
-            {33, 65},{35, 66},{37, 67},{40, 68},
-            {42, 69},{45, 70},{47, 71},{49, 72},
-            {52, 73},{54, 74},{57, 75},{59, 76},
-            {61, 77},{64, 78},{66, 79},{69, 80},
-            {71, 81},{73, 82},{76, 83},{78, 84},
-            {81, 85},{83, 86},{85, 87}
+            { 1, 52},{ 4, 53},{ 6, 54},{ 9, 55},
+            {11, 56},{13, 57},{16, 58},{18, 59},
+            {21, 60},{23, 61},{25, 62},{28, 63},
+            {30, 64},{33, 65},{35, 66},{37, 67},
+            {40, 68},{42, 69},{45, 70},{47, 71},
+            {49, 72},{52, 73},{54, 74},{57, 75},
+            {59, 76},{61, 77},{64, 78},{66, 79},
+            {69, 80},{71, 81},{73, 82},{76, 83},
+            {78, 84},{81, 85},{83, 86},{85, 87}
 
         };
         int i = 0;

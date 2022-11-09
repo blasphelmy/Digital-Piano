@@ -1025,11 +1025,9 @@ namespace olc
 	public:
 
 		//user defined functions
-
+		//check whether or not mouse pos is within the bounds of a rectangular shape
 		bool checkBounds(olc::vi2d pos, olc::vi2d bounds) {
-			olc::vi2d mousePOS = GetMousePos();
-			if (mousePOS.x > pos.x && mousePOS.x < bounds.x && mousePOS.y > pos.y && mousePOS.y < bounds.y) return true;
-			return false;
+			return vMousePos.x > pos.x && vMousePos.x < bounds.x&& vMousePos.y > pos.y && vMousePos.y < bounds.y ? true : false;
 		};
 
 	public: // DRAWING ROUTINES

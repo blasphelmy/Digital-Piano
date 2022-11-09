@@ -1,22 +1,5 @@
 #pragma once
-#include "GLOBALVARIABLES.h"
-#include "olcPixelGameEngineGL.h"
-#include "tsf.h"
-#include "minisdl_audio.h"
-#include "MidiFile.h"
-#include "RtMidi.h"
-#include "Options.h"
-#include "MAPPER.h"
 #include "vectors.h"
-#include <iostream>
-#include <chrono>
-#include <signal.h>
-#include <thread>
-#include <map>
-#include <unordered_map>
-#include <queue>
-#include <mutex>
-#include <set>
 
 class key {
 public:
@@ -84,11 +67,4 @@ public:
 public:
     vector3i    color;
     double      duration = 0.0f;
-//public:
-//    void addDuration(double dur) {
-//        duration += dur;
-//    }
-//    void resetDuration() {
-//        duration = 0.0f;
-//    }
 };

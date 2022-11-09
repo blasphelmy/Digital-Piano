@@ -8,16 +8,11 @@
 #include "DigitalPiano.h"
 #include "MAPPER.h"
 #include <windows.h>
-#include "vectors.h"
 #include <iostream>
 #include <chrono>
 #include <fstream>
 #include <filesystem>
-#include <algorithm>
-#include <signal.h>
 #include <thread>
-#include <mutex>
-#include <set>
 
 tsf* soundfile;
 
@@ -41,10 +36,10 @@ void setUp() {
     float cxLogical             = (float)monitorInfoEx.rcMonitor.right - (float)monitorInfoEx.rcMonitor.left;
     float cyLogical             = (float)monitorInfoEx.rcMonitor.bottom - (float)monitorInfoEx.rcMonitor.top;
 
-    _WINDOW_W                   = (float)cxLogical * .75f;
-    _WINDOW_H                   = (float)cyLogical * .75f;
+    _WINDOW_W                   = (int)((float)cxLogical * .75f);
+    _WINDOW_H                   = (int)((float)cyLogical * .75f);
     if ((int)_WINDOW_W % 52 != 0) _WINDOW_W += 52 - ((int)_WINDOW_W % 52);
-    _KEYSIZE                    = _WINDOW_H / 1.2272727273;
+    _KEYSIZE                    = (float)(_WINDOW_H / 1.2272727273);
     _TEXT_SCALE                 = 1;
 
     //if (_WINDOW_W < 1080)       _TEXT_SCALE = 2;
