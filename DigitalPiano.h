@@ -53,10 +53,7 @@ public:
     std::array<channel, midiChannels> channels;
 private:
     short mask = 0x0f;
-    bool checkRange(short maskedChannel)
-    {
-        return (short)maskedChannel >= 0x00 && (short)maskedChannel <= 0x0f;
-    }
+    bool checkRange(short maskedChannel) { return (short)maskedChannel >= 0x00 && (short)maskedChannel <= 0x0f; }
 
 public:
     bool checkChannel(short channel) {
@@ -77,11 +74,7 @@ public:
         }
         return true;
     }
-    void resetChannels() {
-        for (int i = 0; i < midiChannels; i++) {
-            channels[i].ACTIVE = channels[i].MUTED = false;
-        }
-    }
+    void resetChannels() { for (int i = 0; i < midiChannels; i++) channels[i].ACTIVE = channels[i].MUTED = false; }
 };
 
 class MidiTimer {
@@ -94,25 +87,25 @@ public:
     high_resolution_clock::time_point   finish;
     std::set<std::string>               midiFileSet;
     Channels                            Channels;
-    int                                 flag = 0;
-    int                                 index = 0;
-    long double                         timeSinceStart = 0.0;
-    float                               speed = 1.0;
-    float                               qNotePerSec = 1.5f;
-    float                               duration = 0.f;
-    std::string                         fileName = "";
-    bool                                isPlaying = false;
+    int flag                            = 0;
+    int index                           = 0;
+    long double timeSinceStart          = 0.0;
+    float speed                         = 1.0;
+    float qNotePerSec                   = 1.5f;
+    float duration                      = 0.f;
+    float targetBPM                     = 1.5f;
+    bool isPlaying                      = false;
+    std::string fileName                = "";
     std::mutex                          midiLock;
-    float                               targetBPM = 1.5f;
     void tick() {
         std::this_thread::sleep_for(milliseconds(1));
         if (speed > 3) speed = 3.0f;
         if (speed < 0) speed = 0.0f;
-        this->finish = high_resolution_clock::now();
+        this->finish         = high_resolution_clock::now();
         this->timeSinceStart = (this->timeSinceStart
-            + (duration_cast<milliseconds>(this->finish - this->start).count()
-                * this->speed));
-        this->start = high_resolution_clock::now();
+                             + (duration_cast<milliseconds>(this->finish - this->start).count()
+                             * this->speed));
+        this->start          = high_resolution_clock::now();
     }
 };
 
@@ -126,8 +119,8 @@ protected:
         float b = (float)colorVector.z;
 
         float L = r_bias * r
-            + g_bias * g
-            + b_bias * b;
+                + g_bias * g
+                + b_bias * b;
 
         float new_r = r + f * (L - r);
         float new_g = g + f * (L - g);
@@ -194,7 +187,6 @@ protected:
             size.y = 15;
         }
         olc::vd2d innerRect = size - (2 * olc::vd2d(radius, radius));
-
         olc::vd2d innerRect_pos = pos + olc::vd2d(radius, radius);
 
         FillRect(innerRect_pos, innerRect, color);
@@ -214,11 +206,8 @@ protected:
 
 class DigitalPiano : public PIXELGAMEENGINE_EXT {
 public:
-    DigitalPiano() {
-        sAppName = "Digital Piano";
-    }
-    ~DigitalPiano() {
-    }
+    DigitalPiano() { sAppName = "Digital Piano"; }
+    ~DigitalPiano() { }
 private:
     bool OnUserCreate() override {
         colorMap["C"] = vector3di8t(254,   0,   0);
@@ -233,10 +222,8 @@ private:
 private:
     MAPPER* keyMapper = nullptr;
 public:
-    MAPPER* returnMapper() { return keyMapper; };
-    void connectMapper(MAPPER* newMapper) {
-        keyMapper = newMapper;
-    }
+    MAPPER* returnMapper()                { return keyMapper; };
+    void connectMapper(MAPPER* newMapper) { keyMapper = newMapper; }
 public:
     MidiTimer midiTimer;
 private:
@@ -245,16 +232,16 @@ private:
         olc::vd2d progressBar   = olc::vd2d(0, ProgressBarHeight);
         olc::vd2d pos           = olc::vd2d(0, 0);
         olc::Pixel fillColor    = olc::Pixel(33, 148, 58);
-        void resetProgressBar() { progressBar.x = progressBar.y = 0; }
-        void setProgressBar(float timeSinceStart, float duration) { progressBar.x = _WINDOW_W * (timeSinceStart / duration); }
+
+        void resetProgressBar   () { progressBar.x = progressBar.y = 0; }
+        void setProgressBar     (float timeSinceStart, float duration) { progressBar.x = _WINDOW_W * (timeSinceStart / duration); }
     };
     struct horizontalLine {
         float y = (float)_KEYSIZE; float left = 0.f; float right = (float)_WINDOW_W;
         bool drawSelf(olc::PixelGameEngine* parent, float yOffSet) {
             parent->DrawLine(olc::vd2d(this->left, this->y), olc::vd2d(this->right, this->y), olc::Pixel(50, 50, 50));
             this->y -= yOffSet;
-            if (this->y > 0) return true;
-            return false;
+            return this->y > 0 ? true : false;
         }
     };
 private:
@@ -278,7 +265,7 @@ public:
         keyMapper->pedal         = true;
         midiTimer.flag           = 0;
 
-        if (midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
+        if(midiTimer.qNotePerSec < .5) midiTimer.qNotePerSec = .5;
 
         midiTimer.index          = 0;
         midiTimer.start          = high_resolution_clock::now();
@@ -287,23 +274,20 @@ public:
         tsf_note_off_all(keyMapper->soundFile);
         if (midiTimer.flag != -2) midiTimer.isPlaying = false;
         midiTimer.timeSinceStart = 0.0;
-        midiTimer.Channels.resetChannels();
-        keyMapper->flushActiveNotes();
+        midiTimer.Channels       .resetChannels();
+        keyMapper                ->flushActiveNotes();
     }
 
 private:
     bool OnUserUpdate(float felaspedTime) override {
-        Clear(olc::Pixel(40, 40, 40));
-        keyListeners();
-        drawFrame(felaspedTime);
-        drawData();
-        SetPixelMode(olc::Pixel::NORMAL); // Draw all pixels
+        Clear           (olc::Pixel(40, 40, 40));
+        keyListeners    ();
+        drawFrame       (felaspedTime);
+        drawData        ();
+        SetPixelMode    (olc::Pixel::NORMAL); // Draw all pixels
         return true;
     }
-    bool OnUserDestroy() override {
-        midiTimer.flag = -1;
-        return true;
-    }
+    bool OnUserDestroy() override { midiTimer.flag = -1; return true; }
 
 private:
     void resetActiveNotes() {
@@ -337,12 +321,12 @@ private:
 
     void fillInGhost() {
         olc::vd2d mousePOS = GetMousePos();
-        FillRectDecal(olc::vd2d(0.f, 0.f), olc::vi2d(mousePOS.x, 20), olc::Pixel(45, 122, 142, 150));
+        FillRectDecal(olc::vd2d(0.f, 0.f), olc::vi2d((int32_t)mousePOS.x, 20), olc::Pixel(45, 122, 142, 150));
         progressBar.progressBar = olc::vd2d(mousePOS.x, 20.f);
     }
     void fillInSeekRoutine() {
         olc::vd2d mousePOS = GetMousePos();
-        long double newTimeSinceStart = (mousePOS.x / _WINDOW_W) * midiTimer.duration * TIMECONST;
+        long double newTimeSinceStart = (mousePOS.x / _WINDOW_W) * midiTimer.duration * TIMEMAGNITUDE;
         if (newTimeSinceStart < midiTimer.timeSinceStart) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
@@ -373,13 +357,13 @@ private:
         if (GetKey(olc::Key::LEFT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 1;
-            SeekRoutine(-1, targetBPM * TIMECONST);
+            SeekRoutine(-1, targetBPM * TIMEMAGNITUDE);
             midiTimer.midiLock.unlock();
         }
         else if (GetKey(olc::Key::RIGHT).bPressed) {
             midiTimer.midiLock.lock();
             midiTimer.flag = 2;
-            SeekRoutine(1, targetBPM * TIMECONST);
+            SeekRoutine(1, targetBPM * TIMEMAGNITUDE);
             midiTimer.midiLock.unlock();
         }
         if (GetKey(olc::SPACE).bPressed) {
@@ -404,8 +388,8 @@ private:
             olc::vi2d bounds(pos.x + (fileName.size() * 8), pos.y + textHeight);
             bool inBound = checkBounds(pos, bounds);
             if (inBound && GetMouse(olc::Mouse::LEFT).bPressed) {
-                midiTimer.flag = -2;
                 resetActiveNotes();
+                midiTimer.flag = -2;
                 midiTimer.fileName = fileName;
                 midiTimer.isPlaying = true;
             }
@@ -485,11 +469,11 @@ private:
         drawChannels();
         keyMapper->threadLock.unlock();
         ProcessBarEvents();
-        DrawStringDecal(10, 7, std::to_string(midiTimer.timeSinceStart / TIMECONST) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
+        DrawStringDecal(10, 7, std::to_string(midiTimer.timeSinceStart / TIMEMAGNITUDE) + "/" + std::to_string(midiTimer.duration), olc::WHITE);
     }
     
     void ProcessBarEvents() {
-        progressBar.setProgressBar((float)midiTimer.timeSinceStart / TIMECONST, midiTimer.duration);
+        progressBar.setProgressBar((float)midiTimer.timeSinceStart / TIMEMAGNITUDE, midiTimer.duration);
         FillRectDecal(progressBar.pos, progressBar.bg, olc::Pixel(45, 45, 45));
         FillRectDecal(progressBar.pos, progressBar.progressBar, progressBar.fillColor);
         
@@ -521,11 +505,9 @@ private:
         digitalPiano->midiTimer  .Channels.setChannels(newMidiFile);
         return newMidiFile;
     }
-    bool playMidi(std::string & fileName) {
-
+    bool playMidi(std::string & fileName, MidiTimer & midiTimer) {
         bool action = false;
         smf::MidiFile midifile = getMidiFileRoutine(fileName);
-        MidiTimer& midiTimer = digitalPiano->midiTimer;
         digitalPiano->playSignal(midifile);
         smf::MidiEvent event;
 
@@ -534,21 +516,21 @@ private:
 
             action = true;
             midiTimer.tick();
-            while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * TIMECONST >= midiTimer.timeSinceStart) {
+            while (midiTimer.flag == 1 && midifile[0][midiTimer.index].seconds * TIMEMAGNITUDE >= midiTimer.timeSinceStart) {
                 midiTimer.index--;
                 if (midiTimer.index < 0) {
                     midiTimer.index = 0;
                     midiTimer.flag = 0;
                     break;
                 }
-                if (midifile[0][midiTimer.index].seconds * TIMECONST < midiTimer.timeSinceStart) {
+                if (midifile[0][midiTimer.index].seconds * TIMEMAGNITUDE < midiTimer.timeSinceStart) {
                     midiTimer.flag = 0;
                     break;
                 }
             }
 
             while (midiTimer.flag == 2
-                && midifile[0][midiTimer.index].seconds * TIMECONST <= midiTimer.timeSinceStart)
+                && midifile[0][midiTimer.index].seconds * TIMEMAGNITUDE <= midiTimer.timeSinceStart)
             {
                 midiTimer.index++;
                 if (midiTimer.index > midifile[0].size() - 1) {
@@ -556,20 +538,20 @@ private:
                     midiTimer.flag = 0;
                     break;
                 }
-                if (midifile[0][midiTimer.index].seconds * TIMECONST > midiTimer.timeSinceStart) {
+                if (midifile[0][midiTimer.index].seconds * TIMEMAGNITUDE > midiTimer.timeSinceStart) {
                     midiTimer.flag = 0;
                     break;
                 }
             }
             while (midiTimer.index < midifile[0].size()
                 && midiTimer.flag == 0
-                && midifile[0][midiTimer.index].seconds * TIMECONST <= midiTimer.timeSinceStart)
+                && midifile[0][midiTimer.index].seconds * TIMEMAGNITUDE <= midiTimer.timeSinceStart)
             {
                 event = midifile[0][midiTimer.index];
 
                 //ignore pedals when playing midi file.
                 if (event[0] >= 0x80 && event[0] < 0x8f || event[0] >= 0x90 && event[0] < 0x9f)
-                    keyMapper->setKeyState_PIANO((int)event[0], (int)event[1] - keyMapOffset, (int)event[2], digitalPiano->midiTimer.Channels.checkChannel((short) event[0] & 0x0f));
+                    keyMapper->setKeyState_PIANO((short)event[0], (short)event[1] - keyMapOffset, (short)event[2], digitalPiano->midiTimer.Channels.checkChannel((short) event[0] & 0x0f));
 
                 midiTimer.index++;
             }
@@ -588,7 +570,7 @@ public:
         std::string selection;
         do {
             if (digitalPiano->midiTimer.isPlaying) {
-                playMidi(digitalPiano->midiTimer.fileName);
+                playMidi(digitalPiano->midiTimer.fileName, digitalPiano->midiTimer);
             }
             std::this_thread::sleep_for(milliseconds(10));
         } while (digitalPiano->midiTimer.flag != -1);
@@ -622,7 +604,7 @@ public:
             nBytes = message.size();
             if (nBytes > 1) {
                 //144 keys 176 pedals
-                keyMapper->setKeyState_PIANO((int)message[0], (int)message[1] - 21, (int)message[2], digitalPiano->midiTimer.Channels.checkChannel((short)message[0] & 0x0f));
+                keyMapper->setKeyState_PIANO((short)message[0], (short)message[1] - 21, (short)message[2], digitalPiano->midiTimer.Channels.checkChannel((short)message[0] & 0x0f));
             }
             std::this_thread::sleep_for(milliseconds(1));
         }
@@ -636,7 +618,7 @@ public:
             const std::filesystem::path midiFiles{ "./MIDIFILES" };
             digitalPiano->midiTimer.midiLock.lock();
             digitalPiano->midiTimer.midiFileSet.clear();
-            for (auto const& dir_entry : std::filesystem::directory_iterator{ midiFiles })
+            for (std::filesystem::directory_entry const & dir_entry : std::filesystem::directory_iterator{ midiFiles })
             {
                 std::string fileName = dir_entry
                     .path()
