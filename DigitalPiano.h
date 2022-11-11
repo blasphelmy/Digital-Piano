@@ -24,8 +24,9 @@ struct channel {
     bool MUTED = false; bool ACTIVE = false; char channelNum; 
     int drawSelf(olc::PixelGameEngine* parent, MAPPER * keyMapper, int index) { 
         if (ACTIVE) { 
+            std::string channel = "Channel : " + std::to_string(channelNum);
             olc::vi2d pos((int)_WINDOW_W - 110, 30 + (index++ * 20));
-            olc::vi2d bounds(pos.x + 110, pos.y + textHeight);
+            olc::vi2d bounds(pos.x + (channel.size() * charWidth), pos.y + textHeight);
             olc::Pixel color = !MUTED ? olc::GREEN : olc::RED;
             if (parent->checkBounds(pos, bounds)) {
                 if (parent->GetMouse(olc::Mouse::LEFT).bPressed) {
@@ -37,7 +38,7 @@ struct channel {
                 }
                 color = olc::CYAN;
             }
-            parent->DrawString(pos.x, pos.y, "Channel : " + std::to_string(channelNum), color, (uint32_t)_TEXT_SCALE);
+            parent->DrawString(pos.x, pos.y, channel, color, (uint32_t)_TEXT_SCALE);
         }
         return index;
     };
@@ -385,7 +386,7 @@ private:
         int i = 0;
         for (std::string fileName : midiTimer.midiFileSet) {
             olc::vi2d pos(10, 70 + (i++ * 20));
-            olc::vi2d bounds(pos.x + (fileName.size() * 8), pos.y + textHeight);
+            olc::vi2d bounds(pos.x + (fileName.size() * charWidth), pos.y + textHeight);
             bool inBound = checkBounds(pos, bounds);
             if (inBound && GetMouse(olc::Mouse::LEFT).bPressed) {
                 resetActiveNotes();
@@ -613,16 +614,13 @@ public:
         return 0;
     }
     int MidiFileListener() {
-
         while (digitalPiano->midiTimer.flag != -1) {
             const std::filesystem::path midiFiles{ "./MIDIFILES" };
             digitalPiano->midiTimer.midiLock.lock();
             digitalPiano->midiTimer.midiFileSet.clear();
             for (std::filesystem::directory_entry const & dir_entry : std::filesystem::directory_iterator{ midiFiles })
             {
-                std::string fileName = dir_entry
-                    .path()
-                    .generic_string();
+                std::string fileName = dir_entry.path().generic_string();
 
                 fileName = fileName.substr(fileName.find_last_of("/") + 1);
                 if (fileName.substr(fileName.length() - 4) == ".mid" || fileName.substr(fileName.length() - 4) == ".MID") {
@@ -632,7 +630,6 @@ public:
             digitalPiano->midiTimer.midiLock.unlock();
             std::this_thread::sleep_for(seconds(2));
         }
-
         return 0;
     }
 };
