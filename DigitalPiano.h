@@ -25,7 +25,7 @@ struct channel {
     int drawSelf(olc::PixelGameEngine* parent, MAPPER * keyMapper, int index) { 
         if (ACTIVE) { 
             std::string channel = "Channel : " + std::to_string(channelNum);
-            olc::vi2d pos((int)_WINDOW_W - 110, 30 + (index++ * 20));
+            olc::vi2d pos((int)_WINDOW_W - 110, 50 + (index++ * 20));
             olc::vi2d bounds(pos.x + (channel.size() * charWidth), pos.y + textHeight);
             olc::Pixel color = !MUTED ? olc::GREEN : olc::RED;
             if (parent->checkBounds(pos, bounds)) {
@@ -88,16 +88,16 @@ public:
     high_resolution_clock::time_point   finish;
     std::set<std::string>               midiFileSet;
     Channels                            Channels;
-    int flag                            = 0;
-    int index                           = 0;
     long double timeSinceStart          = 0.0;
-    float speed                         = 1.0;
-    float qNotePerSec                   = 1.5f;
-    float duration                      = 0.f;
-    float targetBPM                     = 1.5f;
-    bool isPlaying                      = false;
+    int         flag                    = 0;
+    int         index                   = 0;
+    float       speed                   = 1.0;
+    float       qNotePerSec             = 1.5f;
+    float       duration                = 0.f;
+    float       targetBPM               = 1.5f;
+    bool        isPlaying               = false;
     std::string fileName                = "";
-    std::mutex                          midiLock;
+    std::mutex  midiLock;
     void tick() {
         std::this_thread::sleep_for(milliseconds(1));
         if (speed > 3) speed = 3.0f;
@@ -129,7 +129,7 @@ protected:
         return vector3i((int)new_r, (int)new_g, (int)new_b);
     };
 
-    void FillRoundedRect(olc::vd2d pos, olc::vd2d size, olc::Pixel color, float radius) {
+    void FillRoundedRect(const olc::vd2d & pos, olc::vd2d size, const olc::Pixel & color, float radius) {
         //size.y = size.y - 2;
         //olc::Pixel aliasedColor(color.r, color.g, color.b, 15);
         //if (size.y < radius * 2) size.y = radius * 2;
@@ -251,6 +251,7 @@ private:
     ProgressBar                                  progressBar;
     float                                        timeAccumalator = 500.f;
     float                                        targetBPM = 1.5f;
+    bool                                         displayNoteChannel = false;
 
 public:
     void playSignal(smf::MidiFile& midifile) {
@@ -398,8 +399,19 @@ private:
         }
     }
     void drawChannels() {
+        olc::vi2d pos((int)_WINDOW_W - 200, 30);
+        olc::vi2d bounds(pos.x + (22 * charWidth), pos.y + textHeight);
+        olc::Pixel color = displayNoteChannel ? olc::GREEN : olc::RED;
+        if (checkBounds(pos, bounds)) {
+            if (GetMouse(olc::Mouse::LEFT).bPressed) {
+                displayNoteChannel = !displayNoteChannel;
+            }
+            color = olc::CYAN;
+        }
+        DrawString(pos.x, pos.y, "Toggle Channel Display", color, (uint32_t)_TEXT_SCALE);
+
         int i = 0;
-        for (int j = 0; j < midiChannels; j++) {
+        for (int j = 0; j < midiChannels && displayNoteChannel; j++) {
             i = midiTimer.Channels.channels[j].drawSelf(this, keyMapper, i);
         }
     }
@@ -412,7 +424,7 @@ private:
             colorVector = normalizeColorVector(colorVector, .9f);
         }
         FillRoundedRect(note->position, note->size - olc::vd2d(1, 0), olc::Pixel(colorVector.x, colorVector.y, colorVector.z), 4);
-        if(detached) olc::PixelGameEngine::DrawStringDecal(note->position + olc::vd2d(3, 1), std::to_string(note->channel), olc::Pixel(0, 0, 0, 255));
+        if(detached && displayNoteChannel) olc::PixelGameEngine::DrawStringDecal(note->position + olc::vd2d(3, 1), std::to_string(note->channel), olc::Pixel(0, 0, 0, 255));
     }
     void drawFlyingNote(FlyingNotes& note, bool detached) {
         drawFlyingNote(&note, detached);
