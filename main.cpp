@@ -38,6 +38,7 @@ void setUp() {
 
     _WINDOW_W                   = (int)((float)cxLogical * .75f);
     _WINDOW_H                   = (int)((float)cyLogical * .75f);
+
     if ((int)_WINDOW_W % 52 != 0) _WINDOW_W += 52 - ((int)_WINDOW_W % 52);
     _KEYSIZE                    = (float)(_WINDOW_H / 1.2272727273);
     _TEXT_SCALE                 = 1;
